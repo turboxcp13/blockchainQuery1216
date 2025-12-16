@@ -12,7 +12,15 @@ use block_ads_root::BlockADSComponents;
 use hash::block_head_hash;
 use serde::{Deserialize, Serialize};
 use std::num::NonZeroU16;
-
+/// 区块头（轻节点存储）
+///
+/// BlockHead 包含区块的关键元数据和承诺根，轻节点通过同步区块头
+/// 可以验证查询结果而无需下载完整区块内容。
+///
+/// # 【创新点1】ads_root 字段
+/// `ads_root` 是块内所有认证数据结构的统一承诺根，通过 Blake2b
+/// 从 BlockADSComponents 计算得出。轻节点只需存储这32字节即可
+/// 验证所有类型的查询（ID Set、ID Tree、MultiADS）。
 #[derive(
     Debug,
     Default,

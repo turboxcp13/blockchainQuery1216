@@ -191,23 +191,39 @@ pub fn build_block<K: Num, T: ReadInterface<K = K> + WriteInterface<K = K>>(
     let multi_ads_hash = blk_multi_ads.to_digest();
     let id_tree_root_hash = id_tree_changes.root.to_digest();
 
-    // 【创新点1】构建 BlockADSComponents 并计算统一承诺根
+    // 【创新点1】构建一体化的 BlockADSRoot
+    // 先构建组件
     let ads_components = BlockADSComponents::new(
         id_set_root_hash,
         id_tree_root_hash,
         multi_ads_hash,
     );
-    let ads_root = ads_components.compute_root();
+    
+    // 从组件构建完整的 BlockADSRoot（体现一体化承诺的设计理念）
+    use crate::chain::block::block_ads_root::BlockADSRoot;
+    let block_ads_root = BlockADSRoot::from_components(ads_components);
+    
+    // 验证内部一致性（调试模式下）
+    #[cfg(debug_assertions)]
+    {
+        debug_assert!(
+            block_ads_root.verify_self(),
+            "BlockADSRoot 内部一致性验证失败！"
+        );
+        debug!("✓ Block {} BlockADSRoot 一致性验证通过", blk_height);
+    }
 
+    // 从 BlockADSRoot 提取数据分别存储
+    // BlockHead 存储统一根（32字节，轻节点同步）
     block_head.set_obj_root_hash(obj_root_hash);
-    block_head.set_ads_root(ads_root);
+    block_head.set_ads_root(*block_ads_root.root());
 
+    // BlockContent 存储完整组件（全节点保存，用于验证时展开）
     block_content.set_multi_ads(blk_multi_ads);
     block_content.set_obj_hashes(obj_hashes);
     block_content.set_obj_id_nums(obj_id_nums);
     block_content.set_id_tree_root(id_tree_changes.root);
-    // 【创新点1】保存组件到 BlockContent，用于验证时展开
-    block_content.set_ads_components(ads_components);
+    block_content.set_ads_components(block_ads_root.components().clone());
 
     chain.write_block_content(blk_height, &block_content)?;
     chain.write_block_head(blk_height, &block_head)?;
