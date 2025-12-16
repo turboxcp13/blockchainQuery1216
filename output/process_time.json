@@ -1,0 +1,46 @@
+[
+  {
+    "query_info": {
+      "stage1": {
+        "real": 904,
+        "sys": 0,
+        "user": 0
+      },
+      "stage2": {
+        "real": 279,
+        "sys": 0,
+        "user": 0
+      },
+      "stage3": {
+        "real": 12,
+        "sys": 0,
+        "user": 0
+      },
+      "stage4": {
+        "real": 76,
+        "sys": 0,
+        "user": 0
+      },
+      "total": {
+        "real": 1306,
+        "sys": 0,
+        "user": 0
+      }
+    },
+    "verify_info": {
+      "verify_time": {
+        "real": 61,
+        "sys": 0,
+        "user": 0
+      },
+      "vo_size": {
+        "cur_id_s": 28,
+        "id_proof_s": 64,
+        "merkle_s": 222,
+        "total_s": 362,
+        "trie_proof_s": 74,
+        "vo_dag_s": 102
+      }
+    }
+  }
+]
