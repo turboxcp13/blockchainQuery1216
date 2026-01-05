@@ -3,7 +3,7 @@ use crate::{
     chain::{
         block::{
             block_ads::BlockMultiADS,
-            block_ads_root::BlockADSComponents,
+            block_ads_root::{BlockADSComponents, BlockADSRoot},
             hash::{obj_id_nums_hash, obj_root_hash},
             BlockContent, BlockHead, Height,
         },
@@ -200,7 +200,6 @@ pub fn build_block<K: Num, T: ReadInterface<K = K> + WriteInterface<K = K>>(
     );
     
     // 从组件构建完整的 BlockADSRoot（体现一体化承诺的设计理念）
-    use crate::chain::block::block_ads_root::BlockADSRoot;
     let block_ads_root = BlockADSRoot::from_components(ads_components);
     
     // 验证内部一致性（调试模式下）

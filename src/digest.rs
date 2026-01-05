@@ -122,6 +122,12 @@ impl From<blake2b_simd::Hash> for Digest {
     }
 }
 
+impl From<[u8; DIGEST_LEN]> for Digest {
+    fn from(bytes: [u8; DIGEST_LEN]) -> Self {
+        Self(bytes)
+    }
+}
+
 pub fn blake2() -> blake2b_simd::Params {
     let mut params = blake2b_simd::Params::new();
     params.hash_length(DIGEST_LEN);

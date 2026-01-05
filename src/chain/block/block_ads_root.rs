@@ -71,24 +71,38 @@ impl Digestible for BlockADSComponents {
 pub struct BlockADSRoot {
     /// 统一的 32 字节承诺
     root: Digest,
+    /// 组件（用于验证时展开）
+    components: BlockADSComponents,
 }
 
 impl BlockADSRoot {
     /// 从组件构建 BlockADSRoot
-    pub fn from_components(components: &BlockADSComponents) -> Self {
-        Self {
-            root: components.compute_root(),
+    pub fn from_components(components: BlockADSComponents) -> Self {
+        let root = components.compute_root();
+        Self { root, components }
+    }
+
+    /// 从已计算的根哈希创建（用于从存储加载，不含组件）
+    pub fn from_digest(root: Digest) -> Self {
+        Self { 
+            root, 
+            components: BlockADSComponents::default(),
         }
     }
 
-    /// 从已计算的根哈希创建（用于从存储加载）
-    pub fn from_digest(root: Digest) -> Self {
-        Self { root }
+    /// 从根和组件创建（用于完整恢复）
+    pub fn from_digest_and_components(root: Digest, components: BlockADSComponents) -> Self {
+        Self { root, components }
     }
 
     /// 获取统一承诺根（轻节点只需存储这个）
     pub fn root(&self) -> &Digest {
         &self.root
+    }
+
+    /// 获取组件引用
+    pub fn components(&self) -> &BlockADSComponents {
+        &self.components
     }
 
     /// 获取根的 Digest 值
@@ -102,6 +116,11 @@ impl BlockADSRoot {
     /// 通过此方法验证 components 确实能生成 root
     pub fn verify_components(&self, components: &BlockADSComponents) -> bool {
         components.compute_root() == self.root
+    }
+
+    /// 验证内部一致性（root 是否由 components 正确计算得出）
+    pub fn verify_self(&self) -> bool {
+        self.components.compute_root() == self.root
     }
 }
 
@@ -125,6 +144,12 @@ impl From<BlockADSRoot> for Digest {
 
 impl From<&BlockADSComponents> for BlockADSRoot {
     fn from(components: &BlockADSComponents) -> Self {
+        Self::from_components(components.clone())
+    }
+}
+
+impl From<BlockADSComponents> for BlockADSRoot {
+    fn from(components: BlockADSComponents) -> Self {
         Self::from_components(components)
     }
 }
@@ -143,10 +168,12 @@ mod tests {
         let components = BlockADSComponents::new(id_set_hash, id_tree_hash, multi_ads_hash);
 
         // 从组件创建 BlockADSRoot
-        let ads_root = BlockADSRoot::from_components(&components);
+        let ads_root = BlockADSRoot::from_components(components.clone());
 
         // 验证组件
         assert!(ads_root.verify_components(&components));
+        // 验证内部一致性
+        assert!(ads_root.verify_self());
     }
 
     #[test]
@@ -164,8 +191,8 @@ mod tests {
             Digest::default(),
         );
 
-        let root1 = BlockADSRoot::from_components(&components1);
-        let root2 = BlockADSRoot::from_components(&components2);
+        let root1 = BlockADSRoot::from_components(components1);
+        let root2 = BlockADSRoot::from_components(components2);
 
         assert_eq!(root1.root(), root2.root());
     }
@@ -190,8 +217,8 @@ mod tests {
             Digest::default(),
         );
 
-        let root1 = BlockADSRoot::from_components(&components1);
-        let root2 = BlockADSRoot::from_components(&components2);
+        let root1 = BlockADSRoot::from_components(components1);
+        let root2 = BlockADSRoot::from_components(components2);
 
         assert_ne!(root1.root(), root2.root());
     }
@@ -204,7 +231,7 @@ mod tests {
             Digest::default(),
         );
 
-        let root = BlockADSRoot::from_components(&components1);
+        let root = BlockADSRoot::from_components(components1);
 
         // 创建不同的组件
         let mut different_bytes = [0u8; 32];
@@ -229,10 +256,34 @@ mod tests {
             Digest::default(),
         );
 
-        let root = BlockADSRoot::from_components(&components);
+        let root = BlockADSRoot::from_components(components);
 
         // Digestible trait 应该返回相同的值
         assert_eq!(root.to_digest(), *root.root());
-        assert_eq!(components.to_digest(), *root.root());
+        assert_eq!(root.components().to_digest(), *root.root());
+    }
+
+    #[test]
+    fn test_verify_self() {
+        let components = BlockADSComponents::new(
+            Digest::default(),
+            Digest::default(),
+            Digest::default(),
+        );
+
+        let root = BlockADSRoot::from_components(components);
+        assert!(root.verify_self());
+    }
+
+    #[test]
+    fn test_components_accessor() {
+        let id_set_hash = Digest::default();
+        let id_tree_hash = Digest::default();
+        let multi_ads_hash = Digest::default();
+
+        let components = BlockADSComponents::new(id_set_hash, id_tree_hash, multi_ads_hash);
+        let root = BlockADSRoot::from_components(components.clone());
+
+        assert_eq!(root.components(), &components);
     }
 }
