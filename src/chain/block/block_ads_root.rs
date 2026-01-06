@@ -95,6 +95,23 @@ impl BlockADSRoot {
         Self { root, components }
     }
 
+    /// 从根和组件创建（与 from_digest_and_components 相同，提供更简洁的API）
+    ///
+    /// # 参数
+    /// - `root`: 已知的 BlockADSRoot 根哈希（通常从 BlockHead 加载）
+    /// - `components`: BlockADSComponents（通常从 BlockContent 加载）
+    ///
+    /// # 使用场景
+    /// 从存储加载时重建完整的 BlockADSRoot：
+    /// ```ignore
+    /// let root = block_head.ads_root;
+    /// let components = block_content.get_ads_components().clone();
+    /// let block_ads_root = BlockADSRoot::new(root, components);
+    /// ```
+    pub fn new(root: Digest, components: BlockADSComponents) -> Self {
+        Self { root, components }
+    }
+
     /// 获取统一承诺根（轻节点只需存储这个）
     pub fn root(&self) -> &Digest {
         &self.root
@@ -285,5 +302,57 @@ mod tests {
         let root = BlockADSRoot::from_components(components.clone());
 
         assert_eq!(root.components(), &components);
+    }
+
+    #[test]
+    fn test_new_method() {
+        // 测试新增的 new() 方法
+        let components = BlockADSComponents::new(
+            Digest::default(),
+            Digest::default(),
+            Digest::default(),
+        );
+        let root_digest = components.compute_root();
+        
+        // 使用 new() 方法创建
+        let ads_root = BlockADSRoot::new(root_digest, components.clone());
+        
+        // 验证内部一致性
+        assert!(ads_root.verify_self());
+        assert_eq!(*ads_root.root(), root_digest);
+        assert_eq!(ads_root.components(), &components);
+    }
+
+    #[test]
+    fn test_new_equals_from_components() {
+        // 验证 new() 和 from_components() 产生相同结果
+        let components = BlockADSComponents::new(
+            Digest::default(),
+            Digest::default(),
+            Digest::default(),
+        );
+        
+        let root1 = BlockADSRoot::from_components(components.clone());
+        let root2 = BlockADSRoot::new(*root1.root(), components.clone());
+        
+        assert_eq!(root1.root(), root2.root());
+        assert_eq!(root1.components(), root2.components());
+    }
+
+    #[test]
+    fn test_from_digest_without_components() {
+        // 测试轻节点场景：只有 root 没有 components
+        let mut some_bytes = [0u8; 32];
+        some_bytes[0] = 42;
+        let some_digest = Digest::from(some_bytes);
+        
+        let root = BlockADSRoot::from_digest(some_digest);
+        
+        // root 应该是我们传入的值
+        assert_eq!(*root.root(), some_digest);
+        
+        // components 是默认值，所以 verify_self 应该失败
+        // （除非 some_digest 恰好等于默认 components 的哈希，概率极低）
+        assert!(!root.verify_self());
     }
 }

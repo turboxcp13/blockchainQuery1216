@@ -404,15 +404,8 @@ fn test_build_style_workflow() {
 
 // === 辅助函数 ===
 
-/// 模拟哈希函数（使用 Blake2b）
+/// 模拟哈希函数（使用项目已有的 blake2b_simd）
 fn mock_hash(data: &[u8]) -> Digest {
-    use blake2::{Blake2b512, Digest as Blake2Digest};
-
-    let mut hasher = Blake2b512::new();
-    hasher.update(data);
-    let result = hasher.finalize();
-    
-    let mut bytes = [0u8; 32];
-    bytes.copy_from_slice(&result[..32]);
-    Digest::from(bytes)
+    use vchain_plus::digest::Digestible;
+    data.to_digest()
 }

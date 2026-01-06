@@ -138,4 +138,20 @@ impl BlockHead {
     pub(crate) fn get_ads_root_hash(&self) -> Digest {
         self.ads_root
     }
+
+    /// 【创新点1】验证 BlockADSComponents 是否与 ads_root 一致
+    ///
+    /// 轻节点持有 BlockHead（包含 ads_root），全节点提供 BlockADSComponents，
+    /// 轻节点通过此方法验证 components 确实能生成 ads_root，
+    /// 从而确认全节点提供的组件数据是可信的。
+    ///
+    /// # 参数
+    /// - `components`: 全节点提供的 BlockADSComponents
+    ///
+    /// # 返回
+    /// - `true`: components 能正确生成 ads_root
+    /// - `false`: components 与 ads_root 不匹配（可能被篡改）
+    pub fn verify_ads_components(&self, components: &BlockADSComponents) -> bool {
+        components.compute_root() == self.ads_root
+    }
 }
