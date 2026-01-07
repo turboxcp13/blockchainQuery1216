@@ -361,7 +361,7 @@ fn test_build_style_workflow() {
     println!("步骤4: 内部一致性验证 ✓");
 
     // 5. 从 BlockADSRoot 提取数据分别存储
-    let mut block_head = BlockHead {
+    let block_head = BlockHead {
         blk_height: Height(100),
         prev_hash: mock_hash(b"prev_block"),
         ads_root: *block_ads_root.root(),  // BlockHead 存储统一根
@@ -372,7 +372,7 @@ fn test_build_style_workflow() {
     block_content.set_ads_components(block_ads_root.components().clone());
     
     println!("步骤5: 分别存储到 BlockHead 和 BlockContent ✓");
-    println!("  - BlockHead.ads_root: {:?}...", block_head.ads_root.as_bytes()[..4]);
+    println!("  - BlockHead.ads_root: {:?}...", &block_head.ads_root.as_bytes()[..4]);
     println!("  - BlockContent.ads_components: 已保存");
 
     // === 验证阶段（模拟轻节点） ===
@@ -395,9 +395,9 @@ fn test_build_style_workflow() {
     
     // 9. 轻节点可以使用各个组件根进行具体查询验证
     println!("\n步骤7: 使用组件进行查询验证");
-    println!("  - 可用于 ID Set 查询: {:?}...", full_node_components.id_set_root_hash.as_bytes()[..4]);
-    println!("  - 可用于 ID Tree 查询: {:?}...", full_node_components.id_tree_root_hash.as_bytes()[..4]);
-    println!("  - 可用于 MultiADS 查询: {:?}...", full_node_components.multi_ads_hash.as_bytes()[..4]);
+    println!("  - 可用于 ID Set 查询: {:?}...", &full_node_components.id_set_root_hash.as_bytes()[..4]);
+    println!("  - 可用于 ID Tree 查询: {:?}...", &full_node_components.id_tree_root_hash.as_bytes()[..4]);
+    println!("  - 可用于 MultiADS 查询: {:?}...", &full_node_components.multi_ads_hash.as_bytes()[..4]);
     
     println!("\n✓ 完整流程测试通过！\n");
 }
