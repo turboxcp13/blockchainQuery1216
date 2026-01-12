@@ -4,6 +4,7 @@ pub mod block;
 pub mod bplus_tree;
 pub mod hash;
 pub mod id_tree;
+pub mod mmr;  // 【创新点2】MMR 链级承诺模块
 pub mod object;
 pub mod query;
 pub mod range;
