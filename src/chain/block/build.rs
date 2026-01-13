@@ -231,3 +231,70 @@ pub fn build_block<K: Num, T: ReadInterface<K = K> + WriteInterface<K = K>>(
 
     Ok((block_head, time))
 }
+
+/// 【创新点2】构建区块并插入 MMR 的增强版本
+/// 
+/// 此函数在 `build_block` 的基础上，额外将 BlockADSRoot 插入到链级 MMR 中，
+/// 实现完整的两层式历史状态证明支持。
+/// 
+/// # 参数
+/// - `blk_height`: 区块高度
+/// - `prev_hash`: 前一区块哈希
+/// - `raw_objs`: 区块内的原始对象
+/// - `chain`: SimChain 可变引用
+/// - `param`: 链参数
+/// - `pk`: 累加器公钥
+/// 
+/// # 返回
+/// - `Ok((block_head, mmr_pos, mmr_root, time))`: 区块头、MMR位置、新MMR根、耗时
+/// - `Err`: 构建失败
+/// 
+/// # 示例
+/// ```ignore
+/// let (block_head, mmr_pos, mmr_root, time) = build_block_with_mmr(
+///     Height(1),
+///     Digest::default(),
+///     objects,
+///     &mut chain,
+///     &param,
+///     &pk,
+/// )?;
+/// 
+/// // 可以验证该区块确实在 MMR 中
+/// let proof = chain.gen_mmr_proof(vec![mmr_pos])?;
+/// assert!(proof.verify(mmr_root, vec![(mmr_pos, block_head.get_ads_root())])?);
+/// ```
+pub fn build_block_with_mmr(
+    blk_height: Height,
+    prev_hash: Digest,
+    raw_objs: Vec<Object<u32>>,
+    chain: &mut crate::SimChain,
+    param: &Parameter,
+    pk: &AccPublicKey,
+) -> Result<(BlockHead, u64, Digest, ProcessDuration)> {
+    info!("Building block {} with MMR integration...", blk_height);
+    let timer = howlong::ProcessCPUTimer::new();
+    
+    // 使用原有的 build_block 逻辑构建区块
+    // 注意：这里传入 &mut *chain 以获得正确的引用类型
+    let (block_head, _build_time) = build_block(
+        blk_height,
+        prev_hash,
+        raw_objs,
+        &mut *chain,
+        param,
+        pk,
+    )?;
+
+    // 【创新点2】将 BlockADSRoot 插入 MMR
+    let block_ads_root = block_head.get_ads_root();
+    let (mmr_pos, mmr_root) = chain.push_to_mmr(block_ads_root)?;
+
+    let time = timer.elapsed();
+    info!(
+        "✓ Block {} built with MMR: pos={}, mmr_root={:?}, time={}",
+        blk_height, mmr_pos, mmr_root, time
+    );
+
+    Ok((block_head, mmr_pos, mmr_root, time))
+}

@@ -10,9 +10,13 @@ pub mod utils;
 
 use anyhow::{Context, Result};
 use chain::{
-    block::{BlockContent, BlockHead, Height},
+    block::{block_ads_root::BlockADSComponents, BlockContent, BlockHead, Height},
     bplus_tree::{BPlusTreeNode, BPlusTreeNodeId},
     id_tree::{IdTreeNode, IdTreeNodeId},
+    mmr::{
+        BlockADSMerge, BlockProofData, ChainProofContext, IndexProof, MerkleProof,
+        MMRProofData, MMRStoreWriteOps, RocksStore, TwoLayerProof, TwoLayerVerifyResult, MMR,
+    },
     object::Object,
     range::Range,
     traits::{ReadInterface, ScanQueryInterface, WriteInterface},
@@ -25,7 +29,21 @@ use std::{
     collections::HashSet,
     fs,
     path::{Path, PathBuf},
+    sync::Arc,
 };
+
+/// 【创新点2】链级 MMR 承诺的元数据
+/// 
+/// 存储 MMR 的当前状态，用于持久化和恢复
+#[derive(Debug, Clone, Default, serde::Serialize, serde::Deserialize)]
+pub struct ChainMMRMeta {
+    /// MMR 当前大小（节点总数）
+    pub mmr_size: u64,
+    /// 最新的 MMR 根哈希
+    pub mmr_root: Digest,
+    /// 已插入的区块数量（叶子节点数）
+    pub block_count: u64,
+}
 
 pub struct SimChain {
     root_path: PathBuf,
@@ -36,6 +54,10 @@ pub struct SimChain {
     bplus_tree_db: DB,
     trie_db: DB,
     obj_db: DB,
+    /// 【创新点2】MMR 数据库 - 存储链级承诺
+    mmr_db: Arc<DB>,
+    /// 【创新点2】MMR 元数据
+    mmr_meta: ChainMMRMeta,
 }
 
 impl SimChain {
@@ -47,6 +69,17 @@ impl SimChain {
         )?;
         let mut opts = rocksdb::Options::default();
         opts.create_if_missing(true);
+        
+        // 【创新点2】创建 MMR 数据库
+        let mmr_db = Arc::new(DB::open(&opts, path.join("mmr.db"))?);
+        
+        // 初始化 MMR 元数据
+        let mmr_meta = ChainMMRMeta::default();
+        fs::write(
+            path.join("mmr_meta.json"),
+            serde_json::to_string_pretty(&mmr_meta)?,
+        )?;
+        
         Ok(Self {
             root_path: path.to_owned(),
             param,
@@ -56,10 +89,31 @@ impl SimChain {
             bplus_tree_db: DB::open(&opts, path.join("bplus_tree.db"))?,
             trie_db: DB::open(&opts, path.join("trie.db"))?,
             obj_db: DB::open(&opts, path.join("obj.db"))?,
+            mmr_db,
+            mmr_meta,
         })
     }
 
     pub fn open(path: &Path) -> Result<Self> {
+        // 【创新点2】加载 MMR 元数据
+        let mmr_meta_path = path.join("mmr_meta.json");
+        let mmr_meta = if mmr_meta_path.exists() {
+            serde_json::from_str::<ChainMMRMeta>(&fs::read_to_string(&mmr_meta_path)?)?
+        } else {
+            // 兼容旧版本：如果没有 MMR 元数据文件，创建默认的
+            ChainMMRMeta::default()
+        };
+        
+        // 【创新点2】打开或创建 MMR 数据库
+        let mmr_db_path = path.join("mmr.db");
+        let mmr_db = if mmr_db_path.exists() {
+            Arc::new(DB::open_default(&mmr_db_path)?)
+        } else {
+            let mut opts = rocksdb::Options::default();
+            opts.create_if_missing(true);
+            Arc::new(DB::open(&opts, &mmr_db_path)?)
+        };
+        
         Ok(Self {
             root_path: path.to_owned(),
             param: serde_json::from_str::<Parameter>(&fs::read_to_string(
@@ -71,7 +125,356 @@ impl SimChain {
             bplus_tree_db: DB::open_default(path.join("bplus_tree.db"))?,
             trie_db: DB::open_default(path.join("trie.db"))?,
             obj_db: DB::open_default(path.join("obj.db"))?,
+            mmr_db,
+            mmr_meta,
         })
+    }
+
+    // ============================================================================
+    // 【创新点2】MMR 链级承诺相关方法
+    // ============================================================================
+
+    /// 获取 MMR 存储
+    pub fn get_mmr_store(&self) -> RocksStore<Digest> {
+        RocksStore::new(Arc::clone(&self.mmr_db))
+    }
+
+    /// 获取当前 MMR 大小
+    pub fn get_mmr_size(&self) -> u64 {
+        self.mmr_meta.mmr_size
+    }
+
+    /// 获取当前 MMR 根
+    pub fn get_mmr_root(&self) -> Digest {
+        self.mmr_meta.mmr_root
+    }
+
+    /// 获取已插入的区块数量
+    pub fn get_mmr_block_count(&self) -> u64 {
+        self.mmr_meta.block_count
+    }
+
+    /// 获取 MMR 元数据
+    pub fn get_mmr_meta(&self) -> &ChainMMRMeta {
+        &self.mmr_meta
+    }
+
+    /// 将 BlockADSRoot 插入 MMR 并更新状态
+    /// 
+    /// # 参数
+    /// - `block_ads_root`: 区块的 BlockADSRoot 摘要
+    /// 
+    /// # 返回
+    /// - `Ok((pos, new_root))`: 插入位置和新的 MMR 根
+    /// - `Err`: 插入失败
+    pub fn push_to_mmr(&mut self, block_ads_root: Digest) -> Result<(u64, Digest)> {
+        let store = self.get_mmr_store();
+        let mut mmr: MMR<Digest, BlockADSMerge, _> = MMR::new(self.mmr_meta.mmr_size, store);
+        
+        // 插入新的 BlockADSRoot
+        let pos = mmr.push(block_ads_root)
+            .map_err(|e| anyhow::anyhow!("MMR push failed: {}", e))?;
+        
+        // 获取新的 MMR 根
+        let new_root = mmr.get_root()
+            .map_err(|e| anyhow::anyhow!("MMR get_root failed: {}", e))?;
+        
+        // 提交批次数据到存储
+        let batch = mmr.batch();
+        let mut store = self.get_mmr_store();
+        for (start_pos, elems) in batch.get_batch_data().iter() {
+            store.append(*start_pos, elems.clone())
+                .map_err(|e| anyhow::anyhow!("MMR store append failed: {}", e))?;
+        }
+        
+        // 更新元数据
+        self.mmr_meta.mmr_size = mmr.mmr_size();
+        self.mmr_meta.mmr_root = new_root;
+        self.mmr_meta.block_count += 1;
+        
+        // 持久化元数据
+        self.save_mmr_meta()?;
+        
+        info!(
+            "✓ BlockADSRoot 已插入 MMR: pos={}, mmr_size={}, block_count={}",
+            pos, self.mmr_meta.mmr_size, self.mmr_meta.block_count
+        );
+        
+        Ok((pos, new_root))
+    }
+
+    /// 生成 MMR 包含性证明
+    /// 
+    /// # 参数
+    /// - `positions`: 需要证明的位置列表
+    /// 
+    /// # 返回
+    /// - `Ok(proof)`: MMR 证明
+    /// - `Err`: 生成失败
+    pub fn gen_mmr_proof(&self, positions: Vec<u64>) -> Result<MerkleProof<Digest, BlockADSMerge>> {
+        let store = self.get_mmr_store();
+        let mmr: MMR<Digest, BlockADSMerge, _> = MMR::new(self.mmr_meta.mmr_size, store);
+        
+        mmr.gen_proof(positions)
+            .map_err(|e| anyhow::anyhow!("MMR gen_proof failed: {}", e))
+    }
+
+    /// 根据区块高度获取其在 MMR 中的位置
+    /// 
+    /// # 参数
+    /// - `block_height`: 区块高度（从1开始）
+    /// 
+    /// # 返回
+    /// - `Some(pos)`: MMR 中的位置
+    /// - `None`: 区块不存在
+    pub fn get_mmr_position_by_height(&self, block_height: Height) -> Option<u64> {
+        if block_height.0 == 0 || block_height.0 as u64 > self.mmr_meta.block_count {
+            return None;
+        }
+        // 区块高度从1开始，MMR 叶子索引从0开始
+        let leaf_index = block_height.0 as u64 - 1;
+        Some(chain::mmr::helper::leaf_index_to_pos(leaf_index))
+    }
+
+    /// 验证 BlockADSRoot 是否属于当前 MMR
+    /// 
+    /// # 参数
+    /// - `block_height`: 区块高度
+    /// - `block_ads_root`: 待验证的 BlockADSRoot
+    /// 
+    /// # 返回
+    /// - `Ok(true)`: 验证通过
+    /// - `Ok(false)`: 验证失败
+    /// - `Err`: 验证过程出错
+    pub fn verify_block_in_mmr(&self, block_height: Height, block_ads_root: Digest) -> Result<bool> {
+        let pos = self.get_mmr_position_by_height(block_height)
+            .context("Block height out of range")?;
+        
+        let proof = self.gen_mmr_proof(vec![pos])?;
+        
+        proof.verify(self.mmr_meta.mmr_root, vec![(pos, block_ads_root)])
+            .map_err(|e| anyhow::anyhow!("MMR verify failed: {}", e))
+    }
+
+    /// 保存 MMR 元数据到文件
+    fn save_mmr_meta(&self) -> Result<()> {
+        let data = serde_json::to_string_pretty(&self.mmr_meta)?;
+        fs::write(self.root_path.join("mmr_meta.json"), data)?;
+        Ok(())
+    }
+
+    /// 重建 MMR（用于数据迁移或修复）
+    /// 
+    /// 从现有区块头重建 MMR
+    pub fn rebuild_mmr(&mut self) -> Result<()> {
+        info!("开始重建 MMR...");
+        
+        // 获取链上的区块数量
+        let (_, max_height) = (&self as &SimChain).get_chain_info()?;
+        
+        if max_height == 0 {
+            info!("链为空，无需重建 MMR");
+            return Ok(());
+        }
+        
+        // 重置 MMR 状态
+        self.mmr_meta = ChainMMRMeta::default();
+        
+        // 遍历所有区块，将 BlockADSRoot 插入 MMR
+        for height in 1..=max_height {
+            let block_head = (&self as &SimChain).read_block_head(Height(height))?;
+            let block_ads_root = block_head.get_ads_root();
+            
+            self.push_to_mmr(block_ads_root)?;
+        }
+        
+        info!(
+            "MMR 重建完成: mmr_size={}, block_count={}, root={:?}",
+            self.mmr_meta.mmr_size,
+            self.mmr_meta.block_count,
+            self.mmr_meta.mmr_root
+        );
+        
+        Ok(())
+    }
+
+    // ============================================================================
+    // 【创新点2】两层式证明相关方法
+    // ============================================================================
+
+    /// 获取链证明上下文
+    ///
+    /// 用于验证两层式证明
+    pub fn get_proof_context(&self) -> ChainProofContext {
+        ChainProofContext::new(
+            self.mmr_meta.mmr_root,
+            self.mmr_meta.mmr_size,
+            self.mmr_meta.block_count,
+        )
+    }
+
+    /// 生成两层式证明
+    ///
+    /// # 参数
+    /// - `block_height`: 区块高度
+    /// - `index_proof`: 可选的索引证明
+    ///
+    /// # 返回
+    /// - `Ok(TwoLayerProof)`: 两层式证明
+    /// - `Err`: 生成失败
+    ///
+    /// # 示例
+    /// ```ignore
+    /// let proof = chain.gen_two_layer_proof(Height(5), None)?;
+    /// assert!(proof.verify(chain.get_mmr_root())?);
+    /// ```
+    pub fn gen_two_layer_proof(
+        &self,
+        block_height: Height,
+        index_proof: Option<IndexProof>,
+    ) -> Result<TwoLayerProof> {
+        // 验证区块高度有效性
+        if block_height.0 == 0 || block_height.0 as u64 > self.mmr_meta.block_count {
+            anyhow::bail!("Invalid block height: {}", block_height.0);
+        }
+
+        // 读取区块头和区块内容
+        let block_head = (&self as &SimChain).read_block_head(block_height)?;
+        let block_content = (&self as &SimChain).read_block_content(block_height)?;
+
+        // 获取 BlockADSRoot 和组件
+        let block_ads_root = block_head.get_ads_root();
+        let components = block_content.get_ads_components().clone();
+
+        // 获取 MMR 位置并生成 MMR 证明
+        let pos = self.get_mmr_position_by_height(block_height)
+            .context("Failed to get MMR position")?;
+        let mmr_proof = self.gen_mmr_proof(vec![pos])?;
+
+        // 构建两层式证明
+        let proof = TwoLayerProof::from_mmr_proof(
+            &mmr_proof,
+            block_height,
+            block_ads_root,
+            components,
+            index_proof,
+        );
+
+        Ok(proof)
+    }
+
+    /// 生成带 ID 树索引证明的两层式证明
+    pub fn gen_two_layer_proof_with_id_tree(&self, block_height: Height) -> Result<TwoLayerProof> {
+        let block_content = (&self as &SimChain).read_block_content(block_height)?;
+        let id_tree_root_hash = block_content.get_ads_components().id_tree_root_hash;
+
+        let index_proof = IndexProof::IdTree {
+            root_hash: id_tree_root_hash,
+        };
+
+        self.gen_two_layer_proof(block_height, Some(index_proof))
+    }
+
+    /// 生成带 B+ 树索引证明的两层式证明
+    pub fn gen_two_layer_proof_with_bplus_tree(
+        &self,
+        block_height: Height,
+        dimension: u8,
+        time_window: u16,
+    ) -> Result<TwoLayerProof> {
+        let block_content = (&self as &SimChain).read_block_content(block_height)?;
+        
+        // 获取对应时间窗口的 B+ 树根
+        let ads = &block_content.ads;
+        let block_ads = ads.read_adses()
+            .get(&time_window)
+            .context("Time window not found")?
+            .clone();
+        
+        let root_hash = block_ads.bplus_tree_roots
+            .get(dimension as usize)
+            .context("Dimension not found")?
+            .to_digest();
+
+        let index_proof = IndexProof::BPlusTree {
+            dimension,
+            time_window,
+            root_hash,
+        };
+
+        self.gen_two_layer_proof(block_height, Some(index_proof))
+    }
+
+    /// 生成带 Trie 索引证明的两层式证明
+    pub fn gen_two_layer_proof_with_trie(
+        &self,
+        block_height: Height,
+        time_window: u16,
+    ) -> Result<TwoLayerProof> {
+        let block_content = (&self as &SimChain).read_block_content(block_height)?;
+        
+        // 获取对应时间窗口的 Trie 根
+        let ads = &block_content.ads;
+        let block_ads = ads.read_adses()
+            .get(&time_window)
+            .context("Time window not found")?
+            .clone();
+        
+        let root_hash = block_ads.trie_root.to_digest();
+
+        let index_proof = IndexProof::Trie {
+            time_window,
+            root_hash,
+        };
+
+        self.gen_two_layer_proof(block_height, Some(index_proof))
+    }
+
+    /// 验证两层式证明
+    ///
+    /// # 参数
+    /// - `proof`: 两层式证明
+    ///
+    /// # 返回
+    /// - `Ok(true)`: 验证通过
+    /// - `Ok(false)`: 验证失败
+    /// - `Err`: 验证过程出错
+    pub fn verify_two_layer_proof(&self, proof: &TwoLayerProof) -> Result<bool> {
+        proof.verify(self.mmr_meta.mmr_root)
+            .map_err(|e| anyhow::anyhow!("Two layer proof verification failed: {}", e))
+    }
+
+    /// 详细验证两层式证明
+    ///
+    /// 返回详细的验证结果，包括各层的验证状态
+    pub fn verify_two_layer_proof_detailed(
+        &self,
+        proof: &TwoLayerProof,
+    ) -> Result<TwoLayerVerifyResult> {
+        proof.verify_detailed(self.mmr_meta.mmr_root)
+            .map_err(|e| anyhow::anyhow!("Two layer proof verification failed: {}", e))
+    }
+
+    /// 批量生成两层式证明
+    ///
+    /// # 参数
+    /// - `block_heights`: 区块高度列表
+    ///
+    /// # 返回
+    /// - `Ok(Vec<TwoLayerProof>)`: 两层式证明列表
+    /// - `Err`: 生成失败
+    pub fn gen_batch_two_layer_proofs(
+        &self,
+        block_heights: Vec<Height>,
+    ) -> Result<Vec<TwoLayerProof>> {
+        let mut proofs = Vec::with_capacity(block_heights.len());
+        
+        for height in block_heights {
+            let proof = self.gen_two_layer_proof(height, None)?;
+            proofs.push(proof);
+        }
+        
+        Ok(proofs)
     }
 }
 

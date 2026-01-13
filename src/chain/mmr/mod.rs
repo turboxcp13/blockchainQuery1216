@@ -8,19 +8,59 @@
 //! - `merge`: Merge trait 定义
 //! - `block_ads_merge`: BlockADSRoot 的 Merge 实现
 //! - `mmr_store`: MMR 存储 trait 定义
+//! - `rocks_store`: RocksDB 持久化存储实现
+//! - `two_layer_proof`: 两层式历史状态证明
 //! - `helper`: MMR 辅助函数
 //! - `error`: 错误类型定义
+//!
+//! ## 两层式证明架构
+//!
+//! ```text
+//! ┌─────────────────────────────────────────────────────────────────┐
+//! │                         轻节点状态                               │
+//! │  仅存储: MMR Root (32 bytes)                                    │
+//! └─────────────────────────────────────────────────────────────────┘
+//!                              │
+//!                    ┌─────────▼─────────┐
+//!                    │   第一层证明       │
+//!                    │   MMR Proof       │
+//!                    │   O(log n) 大小    │
+//!                    └─────────┬─────────┘
+//!                              │
+//!                              ▼
+//! ┌─────────────────────────────────────────────────────────────────┐
+//! │                     BlockADSRoot                                 │
+//! │  ┌─────────────┬─────────────────┬───────────────┐              │
+//! │  │ id_set_hash │ id_tree_hash    │ multi_ads_hash│              │
+//! │  └─────────────┴─────────────────┴───────────────┘              │
+//! └─────────────────────────────────────────────────────────────────┘
+//!                              │
+//!                    ┌─────────▼─────────┐
+//!                    │   第二层证明       │
+//!                    │   Block Proof     │
+//!                    │   索引级 Merkle   │
+//!                    └─────────┬─────────┘
+//!                              │
+//!                              ▼
+//! ┌─────────────────────────────────────────────────────────────────┐
+//! │                      查询结果                                    │
+//! │  ID Tree / B+ Tree / Trie 证明路径                              │
+//! └─────────────────────────────────────────────────────────────────┘
+//! ```
 //!
 //! ## 使用示例
 //!
 //! ```ignore
-//! use vchain_plus::chain::mmr::{MMR, BlockADSMerge, MemStore};
+//! use vchain_plus::chain::mmr::{MMR, BlockADSMerge, MemStore, RocksStore};
+//! use vchain_plus::chain::mmr::{TwoLayerProof, ChainProofContext};
 //! use vchain_plus::digest::Digest;
 //!
-//! // 创建内存存储
+//! // 方式1: 使用内存存储（测试用）
 //! let store = MemStore::default();
+//! let mut mmr: MMR<Digest, BlockADSMerge, _> = MMR::new(0, store);
 //!
-//! // 创建 MMR
+//! // 方式2: 使用 RocksDB 持久化存储（生产用）
+//! let store = RocksStore::open(Path::new("mmr.db")).unwrap();
 //! let mut mmr: MMR<Digest, BlockADSMerge, _> = MMR::new(0, store);
 //!
 //! // 插入 BlockADSRoot
@@ -34,6 +74,18 @@
 //!
 //! // 验证证明
 //! assert!(proof.verify(root, vec![(pos, block_ads_root.to_digest())])?);
+//!
+//! // 生成两层式证明
+//! let two_layer_proof = TwoLayerProof::from_mmr_proof(
+//!     &proof,
+//!     Height(1),
+//!     block_ads_root,
+//!     components,
+//!     None,
+//! );
+//!
+//! // 验证两层式证明
+//! assert!(two_layer_proof.verify(root)?);
 //! ```
 
 pub mod block_ads_merge;
@@ -42,6 +94,8 @@ pub mod helper;
 pub mod merge;
 pub mod mmr;
 pub mod mmr_store;
+pub mod rocks_store;
+pub mod two_layer_proof;
 
 // 重新导出常用类型
 pub use block_ads_merge::BlockADSMerge;
@@ -49,3 +103,8 @@ pub use error::{Error, Result};
 pub use merge::Merge;
 pub use mmr::{MerkleProof, MMR};
 pub use mmr_store::{MMRBatch, MMRStoreReadOps, MMRStoreWriteOps, MemStore};
+pub use rocks_store::RocksStore;
+pub use two_layer_proof::{
+    BatchTwoLayerProof, BlockProofData, ChainProofContext, IndexProof, MMRProofData,
+    SingleBlockProof, TwoLayerProof, TwoLayerVerifyResult,
+};

@@ -23,6 +23,21 @@ impl<Elem, Store> MMRBatch<Elem, Store> {
     pub fn store(&self) -> &Store {
         &self.store
     }
+
+    /// 【创新点2】获取批次数据的引用（用于外部持久化）
+    pub fn get_batch_data(&self) -> &Vec<(u64, Vec<Elem>)> {
+        &self.memory_batch
+    }
+
+    /// 【创新点2】检查批次是否为空
+    pub fn is_empty(&self) -> bool {
+        self.memory_batch.is_empty()
+    }
+
+    /// 【创新点2】获取批次中的元素数量
+    pub fn len(&self) -> usize {
+        self.memory_batch.len()
+    }
 }
 
 impl<Elem: Clone, Store: MMRStoreReadOps<Elem>> MMRBatch<Elem, Store> {
@@ -55,6 +70,16 @@ impl<Elem, Store> IntoIterator for MMRBatch<Elem, Store> {
 
     fn into_iter(self) -> Self::IntoIter {
         self.memory_batch.into_iter()
+    }
+}
+
+/// 【创新点2】为 MMRBatch 实现 Clone（当 Elem 和 Store 都可 Clone 时）
+impl<Elem: Clone, Store: Clone> Clone for MMRBatch<Elem, Store> {
+    fn clone(&self) -> Self {
+        Self {
+            memory_batch: self.memory_batch.clone(),
+            store: self.store.clone(),
+        }
     }
 }
 
