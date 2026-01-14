@@ -451,6 +451,8 @@ fn test_proof_serialization() {
 
     let components = make_components(8);
     let block_ads_root = components.compute_root();
+    // 保存 id_tree_root_hash 用于 IndexProof
+    let id_tree_root_hash = components.id_tree_root_hash;
 
     let store = MemStore::default();
     let mut mmr: MMR<Digest, BlockADSMerge, _> = MMR::new(0, store);
@@ -464,7 +466,7 @@ fn test_proof_serialization() {
         block_ads_root,
         components,
         Some(IndexProof::IdTree {
-            root_hash: block_ads_root,
+            root_hash: id_tree_root_hash,  // 使用正确的 id_tree_root_hash
         }),
     );
 

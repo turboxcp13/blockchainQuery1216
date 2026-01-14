@@ -14,6 +14,7 @@
 //! cargo test --test build_block_mmr_test -- --nocapture
 //! ```
 
+use std::collections::HashSet;
 use std::num::NonZeroU16;
 use tempfile::tempdir;
 use vchain_plus::acc::AccPublicKey;
@@ -33,7 +34,7 @@ fn make_test_param() -> Parameter {
         id_tree_fanout: 4,
         bplus_tree_fanout: 4,
         num_dim: 2,
-        max_id_num: NonZeroU16::new(1000).unwrap(),
+        max_id_num: NonZeroU16::new(1000).unwrap().get(),
         time_win_sizes: vec![10],
     }
 }
@@ -44,16 +45,18 @@ fn make_test_objects(height: Height, count: usize) -> Vec<Object<u32>> {
         .map(|i| Object {
             blk_height: height,
             num_data: vec![(i * 10) as u32, (i * 20) as u32],
-            keyword_data: vec![format!("keyword_{}", i)],
+            keyword_data: HashSet::from([format!("keyword_{}", i)]),
         })
         .collect()
 }
 
 /// 创建累加器公钥（测试用）
 fn make_test_pk() -> AccPublicKey {
-    use vchain_plus::acc::AccSecretKey;
-    let sk = AccSecretKey::generate(512);
-    AccPublicKey::from(&sk)
+    use vchain_plus::acc::{AccSecretKey, AccSecretKeyWithPowCache};
+    use rand::thread_rng;
+    let sk = AccSecretKey::rand(thread_rng());
+    let sk_cache: AccSecretKeyWithPowCache = sk.into();
+    AccPublicKey::gen_key(&sk_cache, 40) // q = 40
 }
 
 // === 测试用例 ===

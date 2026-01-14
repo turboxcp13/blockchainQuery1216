@@ -14,7 +14,6 @@
 //! cargo test --test simchain_mmr_integration_test -- --nocapture
 //! ```
 
-use std::path::Path;
 use tempfile::tempdir;
 use vchain_plus::chain::block::Height;
 use vchain_plus::chain::Parameter;
@@ -34,7 +33,7 @@ fn make_test_param() -> Parameter {
         id_tree_fanout: 4,
         bplus_tree_fanout: 4,
         num_dim: 2,
-        max_id_num: std::num::NonZeroU16::new(1000).unwrap(),
+        max_id_num: std::num::NonZeroU16::new(1000).unwrap().get(),
         time_win_sizes: vec![10, 20],
     }
 }
