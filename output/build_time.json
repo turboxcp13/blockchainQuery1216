@@ -3,7 +3,7 @@
     {
       "blk_height": 1,
       "build_time": {
-        "real": 5182,
+        "real": 6474,
         "sys": 0,
         "user": 0
       }
@@ -11,7 +11,7 @@
     {
       "blk_height": 2,
       "build_time": {
-        "real": 5581,
+        "real": 9251,
         "sys": 0,
         "user": 0
       }
@@ -19,39 +19,39 @@
     {
       "blk_height": 3,
       "build_time": {
-        "real": 5862,
+        "real": 14745,
         "sys": 0,
-        "user": 0
+        "user": 15625
       }
     },
     {
       "blk_height": 4,
       "build_time": {
-        "real": 4371,
-        "sys": 15625,
-        "user": 0
+        "real": 10227,
+        "sys": 0,
+        "user": 15625
       }
     },
     {
       "blk_height": 5,
       "build_time": {
-        "real": 9159,
+        "real": 22863,
         "sys": 0,
-        "user": 0
+        "user": 31250
       }
     },
     {
       "blk_height": 6,
       "build_time": {
-        "real": 7469,
-        "sys": 15625,
+        "real": 23159,
+        "sys": 0,
         "user": 0
       }
     },
     {
       "blk_height": 7,
       "build_time": {
-        "real": 6701,
+        "real": 10566,
         "sys": 0,
         "user": 0
       }
@@ -59,47 +59,47 @@
     {
       "blk_height": 8,
       "build_time": {
-        "real": 7363,
-        "sys": 15625,
-        "user": 0
-      }
-    },
-    {
-      "blk_height": 9,
-      "build_time": {
-        "real": 8896,
-        "sys": 0,
-        "user": 0
-      }
-    },
-    {
-      "blk_height": 10,
-      "build_time": {
-        "real": 8935,
+        "real": 9403,
         "sys": 0,
         "user": 15625
       }
     },
     {
-      "blk_height": 11,
+      "blk_height": 9,
       "build_time": {
-        "real": 7297,
+        "real": 12023,
+        "sys": 0,
+        "user": 15625
+      }
+    },
+    {
+      "blk_height": 10,
+      "build_time": {
+        "real": 12225,
         "sys": 0,
         "user": 0
       }
     },
     {
+      "blk_height": 11,
+      "build_time": {
+        "real": 9618,
+        "sys": 0,
+        "user": 15625
+      }
+    },
+    {
       "blk_height": 12,
       "build_time": {
-        "real": 6253,
-        "sys": 15625,
-        "user": 0
+        "real": 8617,
+        "sys": 0,
+        "user": 15625
       }
     },
     {
       "blk_height": 13,
       "build_time": {
-        "real": 6989,
+        "real": 9665,
         "sys": 0,
         "user": 0
       }
@@ -107,7 +107,7 @@
     {
       "blk_height": 14,
       "build_time": {
-        "real": 6983,
+        "real": 9619,
         "sys": 0,
         "user": 15625
       }
@@ -115,7 +115,7 @@
     {
       "blk_height": 15,
       "build_time": {
-        "real": 6358,
+        "real": 8036,
         "sys": 0,
         "user": 0
       }
@@ -123,7 +123,7 @@
     {
       "blk_height": 16,
       "build_time": {
-        "real": 6440,
+        "real": 8663,
         "sys": 0,
         "user": 15625
       }
@@ -131,15 +131,15 @@
     {
       "blk_height": 17,
       "build_time": {
-        "real": 7534,
+        "real": 10656,
         "sys": 0,
-        "user": 0
+        "user": 15625
       }
     },
     {
       "blk_height": 18,
       "build_time": {
-        "real": 7127,
+        "real": 10276,
         "sys": 0,
         "user": 0
       }
@@ -147,23 +147,23 @@
     {
       "blk_height": 19,
       "build_time": {
-        "real": 8192,
+        "real": 10854,
         "sys": 0,
-        "user": 0
+        "user": 15625
       }
     },
     {
       "blk_height": 20,
       "build_time": {
-        "real": 7289,
+        "real": 9339,
         "sys": 0,
         "user": 15625
       }
     }
   ],
   "total_time": {
-    "real": 148562,
-    "sys": 78125,
-    "user": 62500
+    "real": 248386,
+    "sys": 0,
+    "user": 218750
   }
 }

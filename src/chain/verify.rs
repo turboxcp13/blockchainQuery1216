@@ -516,10 +516,22 @@ fn inner_verify<K: Num, T: ReadInterface<K = K>>(
     Ok(())
 }
 
+/// 计算单个 VO 的大小
+fn compute_vo_size<K: Num + Serialize>(vo: &VO<K>) -> VOSize {
+    let vo_dag_s = bincode::serialize(&vo.vo_dag_content).map(|v| v.len()).unwrap_or(0);
+    let trie_proof_s = bincode::serialize(&vo.trie_proofs).map(|v| v.len()).unwrap_or(0);
+    let id_proof_s = bincode::serialize(&vo.id_tree_proof).map(|v| v.len()).unwrap_or(0);
+    let cur_id_s = bincode::serialize(&vo.cur_obj_id).map(|v| v.len()).unwrap_or(0);
+    let merkle_s = bincode::serialize(&vo.merkle_proofs).map(|v| v.len()).unwrap_or(0);
+    let total_s = vo_dag_s + trie_proof_s + id_proof_s + cur_id_s + merkle_s;
+    
+    VOSize::new(vo_dag_s, trie_proof_s, id_proof_s, cur_id_s, merkle_s, total_s)
+}
+
 /// 公开的验证函数
 /// 
 /// 验证查询结果的正确性
-pub fn verify<K: Num, T: ReadInterface<K = K>>(
+pub fn verify<K: Num + Serialize, T: ReadInterface<K = K>>(
     chain: T,
     results: &[(HashMap<ObjId, Object<K>>, VO<K>)],
     graph: &Graph<DagNode<K>, bool>,
@@ -527,14 +539,17 @@ pub fn verify<K: Num, T: ReadInterface<K = K>>(
 ) -> Result<VerifyInfo> {
     let timer = ProcessCPUTimer::new();
     
+    let mut total_vo_size = VOSize::new(0, 0, 0, 0, 0, 0);
+    
     for (res_content, vo_content) in results {
         inner_verify(&chain, res_content, vo_content, graph, pk)?;
+        total_vo_size += compute_vo_size(vo_content);
     }
     
     let verify_time = Time::from(timer.elapsed());
     
     Ok(VerifyInfo {
-        vo_size: VOSize::new(0, 0, 0, 0, 0, 0),
+        vo_size: total_vo_size,
         verify_time,
     })
 }
