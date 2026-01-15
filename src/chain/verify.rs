@@ -518,12 +518,45 @@ fn inner_verify<K: Num, T: ReadInterface<K = K>>(
 
 /// 计算单个 VO 的大小
 fn compute_vo_size<K: Num + Serialize>(vo: &VO<K>) -> VOSize {
-    let vo_dag_s = bincode::serialize(&vo.vo_dag_content).map(|v| v.len()).unwrap_or(0);
-    let trie_proof_s = bincode::serialize(&vo.trie_proofs).map(|v| v.len()).unwrap_or(0);
-    let id_proof_s = bincode::serialize(&vo.id_tree_proof).map(|v| v.len()).unwrap_or(0);
-    let cur_id_s = bincode::serialize(&vo.cur_obj_id).map(|v| v.len()).unwrap_or(0);
-    let merkle_s = bincode::serialize(&vo.merkle_proofs).map(|v| v.len()).unwrap_or(0);
+    let vo_dag_s = match bincode::serialize(&vo.vo_dag_content) {
+        Ok(v) => v.len(),
+        Err(e) => {
+            warn!("Failed to serialize vo_dag_content: {:?}", e);
+            0
+        }
+    };
+    let trie_proof_s = match bincode::serialize(&vo.trie_proofs) {
+        Ok(v) => v.len(),
+        Err(e) => {
+            warn!("Failed to serialize trie_proofs: {:?}", e);
+            0
+        }
+    };
+    let id_proof_s = match bincode::serialize(&vo.id_tree_proof) {
+        Ok(v) => v.len(),
+        Err(e) => {
+            warn!("Failed to serialize id_tree_proof: {:?}", e);
+            0
+        }
+    };
+    let cur_id_s = match bincode::serialize(&vo.cur_obj_id) {
+        Ok(v) => v.len(),
+        Err(e) => {
+            warn!("Failed to serialize cur_obj_id: {:?}", e);
+            0
+        }
+    };
+    let merkle_s = match bincode::serialize(&vo.merkle_proofs) {
+        Ok(v) => v.len(),
+        Err(e) => {
+            warn!("Failed to serialize merkle_proofs: {:?}", e);
+            0
+        }
+    };
     let total_s = vo_dag_s + trie_proof_s + id_proof_s + cur_id_s + merkle_s;
+    
+    info!("VO size computed: vo_dag_s={}, trie_proof_s={}, id_proof_s={}, cur_id_s={}, merkle_s={}, total_s={}",
+          vo_dag_s, trie_proof_s, id_proof_s, cur_id_s, merkle_s, total_s);
     
     VOSize::new(vo_dag_s, trie_proof_s, id_proof_s, cur_id_s, merkle_s, total_s)
 }
@@ -539,14 +572,25 @@ pub fn verify<K: Num + Serialize, T: ReadInterface<K = K>>(
 ) -> Result<VerifyInfo> {
     let timer = ProcessCPUTimer::new();
     
+    info!("Starting verification with {} result(s)", results.len());
+    
     let mut total_vo_size = VOSize::new(0, 0, 0, 0, 0, 0);
     
-    for (res_content, vo_content) in results {
+    for (i, (res_content, vo_content)) in results.iter().enumerate() {
+        info!("Verifying result {} with {} objects", i, res_content.len());
         inner_verify(&chain, res_content, vo_content, graph, pk)?;
-        total_vo_size += compute_vo_size(vo_content);
+        let vo_size = compute_vo_size(vo_content);
+        info!("Result {} VO size: {:?}", i, vo_size);
+        total_vo_size += vo_size;
+    }
+    
+    if results.is_empty() {
+        warn!("Results array is empty! This is why vo_size is all zeros.");
     }
     
     let verify_time = Time::from(timer.elapsed());
+    
+    info!("Total VO size: {:?}", total_vo_size);
     
     Ok(VerifyInfo {
         vo_size: total_vo_size,
