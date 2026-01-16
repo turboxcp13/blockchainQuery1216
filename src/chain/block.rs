@@ -39,11 +39,11 @@ use std::num::NonZeroU16;
     derive_more::From,
     derive_more::Into,
 )]
-pub struct Height(pub u32);
+pub struct Height(pub u32);//u32 4字节
 
 #[derive(Debug, Clone, Eq, PartialEq, Default, Serialize, Deserialize)]
 pub struct BlockContent {
-    pub blk_height: Height,
+    pub blk_height: Height,//u32 4字节
     pub prev_hash: Digest,
     pub id_tree_root: IdTreeRoot,
     pub ads: BlockMultiADS,
@@ -98,13 +98,14 @@ impl BlockContent {
 }
 
 #[derive(Debug, Clone, Eq, PartialEq, Default, Serialize, Deserialize)]
-pub struct BlockHead {
-    pub blk_height: Height,
-    pub prev_hash: Digest,
-    /// 【创新点1】BlockADSRoot 的统一承诺（32字节）
-    /// 轻节点只需存储这个值，验证时通过 BlockContent.ads_components 展开
-    pub ads_root: Digest,
-    pub obj_root_hash: Digest,
+pub struct BlockHead {//块头固定100字节
+    // 【创新点1】BlockADSRoot 的统一承诺（32字节）
+    // 轻节点只需存储这个值，验证时通过 BlockContent.ads_components 展开
+    pub blk_height: Height,//u32 4字节
+    //pub const DIGEST_LEN: usize = 32;
+    pub prev_hash: Digest,//32字节
+    pub ads_root: Digest,//32字节
+    pub obj_root_hash: Digest,//32字节
 }
 
 impl Digestible for BlockHead {
