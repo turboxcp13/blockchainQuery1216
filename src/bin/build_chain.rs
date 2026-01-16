@@ -11,7 +11,7 @@ use structopt::StructOpt;
 use vchain_plus::utils::{init_tracing_subscriber, KeyPair};
 use vchain_plus::{
     chain::{
-        block::{build::build_block, Height},
+        block::{build::build_block_with_mmr, Height},  // 修改：使用 build_block_with_mmr
         object::Object,
         traits::WriteInterface,
         Parameter,
@@ -64,6 +64,8 @@ struct Opt {
 struct BuildTime {
     blk_height: Height,
     build_time: Time,
+    // 【创新点2】新增 MMR 相关信息
+    mmr_pos: u64,
 }
 
 fn build_chain(
@@ -87,20 +89,55 @@ fn build_chain(
     info!("Time for loading public key: {}", time);
     let mut time_set = Vec::<BuildTime>::new();
     let timer = howlong::ProcessCPUTimer::new();
+    
+    // 【创新点2】使用 build_block_with_mmr 替代 build_block
     for (blk_height, objs) in raw_objs {
-        let (blk_head, duration) =
-            build_block(blk_height, prev_hash, objs, &mut chain, param, &pk)?;
+        let (blk_head, mmr_pos, mmr_root, duration) = build_block_with_mmr(
+            blk_height,
+            prev_hash,
+            objs,
+            &mut chain,
+            param,
+            &pk,
+        )?;
+        
         prev_hash = blk_head.to_digest();
+        
+        // 记录 MMR 信息
+        info!(
+            "Block {}: mmr_pos={}, mmr_root={:?}...",
+            blk_height.0,
+            mmr_pos,
+            &mmr_root.as_bytes()[..4]
+        );
+        
         time_set.push(BuildTime {
             blk_height,
             build_time: duration.into(),
+            mmr_pos,
         });
     }
+    
     let time = timer.elapsed();
     info!("Block building finished. Time elapsed: {}", time);
+    
+    // 【创新点2】输出 MMR 最终状态
+    info!(
+        "MMR final state: size={}, block_count={}, root={:?}...",
+        chain.get_mmr_size(),
+        chain.get_mmr_block_count(),
+        &chain.get_mmr_root().as_bytes()[..4]
+    );
+    
     let res = json!({
         "total_time": Time::from(time),
         "time_set": time_set,
+        // 【创新点2】新增 MMR 状态信息
+        "mmr_info": {
+            "mmr_size": chain.get_mmr_size(),
+            "block_count": chain.get_mmr_block_count(),
+            "mmr_root": format!("{:?}", chain.get_mmr_root()),
+        }
     });
     let s = serde_json::to_string_pretty(&res)?;
     fs::write(res_path, &s)?;
