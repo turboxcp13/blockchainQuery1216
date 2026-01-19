@@ -1,0 +1,115 @@
+{
+  "metadata": {
+    "experiment_name": "experiment2_existing_db",
+    "description": "链级区块头认证时间对比 - 使用已有数据库",
+    "timestamp": 1768547112,
+    "dataset_path": "output/db_eth",
+    "key_path": "output/pk_eth.key",
+    "chain_lengths": [
+      20000
+    ],
+    "verify_iterations": 100,
+    "header_verify_time_us": 1
+  },
+  "results": [
+    {
+      "chain_length": 20000,
+      "test_block_height": 1,
+      "mmr_verify_time_us": 23.88,
+      "mmr_verify_time_min_us": 13,
+      "mmr_verify_time_max_us": 364,
+      "mmr_verify_time_std_us": 44.15932586222372,
+      "header_chain_verify_time_us": 20000,
+      "headers_to_verify_count": 20000,
+      "log2_n": 14.287712379549449,
+      "speedup_ratio": 837.5209380234506,
+      "mmr_time_vs_log2": 1.671366231740524,
+      "mmr_proof_items_count": 15,
+      "mmr_proof_size_bytes": 480,
+      "verify_iterations": 100,
+      "proof_gen_time_us": 8419
+    },
+    {
+      "chain_length": 20000,
+      "test_block_height": 5000,
+      "mmr_verify_time_us": 18.31,
+      "mmr_verify_time_min_us": 14,
+      "mmr_verify_time_max_us": 309,
+      "mmr_verify_time_std_us": 30.570235408470356,
+      "header_chain_verify_time_us": 15001,
+      "headers_to_verify_count": 15001,
+      "log2_n": 14.287712379549449,
+      "speedup_ratio": 819.2790824685965,
+      "mmr_time_vs_log2": 1.2815207580891539,
+      "mmr_proof_items_count": 15,
+      "mmr_proof_size_bytes": 480,
+      "verify_iterations": 100,
+      "proof_gen_time_us": 5211
+    },
+    {
+      "chain_length": 20000,
+      "test_block_height": 10000,
+      "mmr_verify_time_us": 15.54,
+      "mmr_verify_time_min_us": 14,
+      "mmr_verify_time_max_us": 72,
+      "mmr_verify_time_std_us": 7.346297081392835,
+      "header_chain_verify_time_us": 10001,
+      "headers_to_verify_count": 10001,
+      "log2_n": 14.287712379549449,
+      "speedup_ratio": 643.5649935649936,
+      "mmr_time_vs_log2": 1.0876478744241098,
+      "mmr_proof_items_count": 15,
+      "mmr_proof_size_bytes": 480,
+      "verify_iterations": 100,
+      "proof_gen_time_us": 4289
+    },
+    {
+      "chain_length": 20000,
+      "test_block_height": 15000,
+      "mmr_verify_time_us": 14.47,
+      "mmr_verify_time_min_us": 14,
+      "mmr_verify_time_max_us": 25,
+      "mmr_verify_time_std_us": 2.0471956674949556,
+      "header_chain_verify_time_us": 5001,
+      "headers_to_verify_count": 5001,
+      "log2_n": 14.287712379549449,
+      "speedup_ratio": 345.61161022805805,
+      "mmr_time_vs_log2": 1.0127583489650496,
+      "mmr_proof_items_count": 15,
+      "mmr_proof_size_bytes": 480,
+      "verify_iterations": 100,
+      "proof_gen_time_us": 4945
+    },
+    {
+      "chain_length": 20000,
+      "test_block_height": 19999,
+      "mmr_verify_time_us": 9.14,
+      "mmr_verify_time_min_us": 8,
+      "mmr_verify_time_max_us": 19,
+      "mmr_verify_time_std_us": 1.8695864610532285,
+      "header_chain_verify_time_us": 2,
+      "headers_to_verify_count": 2,
+      "log2_n": 14.287712379549449,
+      "speedup_ratio": 0.2188183807439825,
+      "mmr_time_vs_log2": 0.639710525883936,
+      "mmr_proof_items_count": 9,
+      "mmr_proof_size_bytes": 288,
+      "verify_iterations": 100,
+      "proof_gen_time_us": 4561
+    }
+  ],
+  "summary": {
+    "min_speedup_ratio": 0.2188183807439825,
+    "max_speedup_ratio": 837.5209380234506,
+    "avg_speedup_ratio": 529.2390885331686,
+    "mmr_verify_time_range_us": [
+      9.14,
+      23.88
+    ],
+    "header_verify_time_range_us": [
+      2,
+      20000
+    ],
+    "total_experiments": 5
+  }
+}
