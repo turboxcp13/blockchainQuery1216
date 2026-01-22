@@ -14,7 +14,7 @@
 //! - 一体化块头(100B): height(4) + prev_hash(32) + ads_root(32) + obj_root(32)
 //!
 //! ## 运行命令
-//! ```bash
+//! ```
 //! cargo test --test experiment1_proof_size --release -- --nocapture
 //! ```
 

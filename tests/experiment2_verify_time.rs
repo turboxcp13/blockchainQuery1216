@@ -14,7 +14,7 @@
 //! - 第二层（块级）: BlockADSRoot展开验证，验证Components一致性
 //!
 //! ## 运行命令
-//! ```bash
+//! ```
 //! cargo test --test experiment2_verify_time --release -- --nocapture
 //! ```
 
