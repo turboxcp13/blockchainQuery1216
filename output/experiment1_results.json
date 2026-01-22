@@ -1,0 +1,1070 @@
+{
+  "metadata": {
+    "experiment_name": "experiment1_proof_size_comparison",
+    "description": "链级证明大小多方案对比实验",
+    "timestamp": 1768917323,
+    "dataset_path": "data/dataset/eth.dat",
+    "key_path": "output/pk_eth.key",
+    "chain_lengths": [
+      100,
+      200,
+      300,
+      400,
+      500,
+      750,
+      1000,
+      1500,
+      2000,
+      2500,
+      3000,
+      4000,
+      5000,
+      6000,
+      7000,
+      8000,
+      9000,
+      10000,
+      12000,
+      14000,
+      16000,
+      18000,
+      20000
+    ],
+    "scattered_block_header_size": 164,
+    "unified_block_header_size": 100,
+    "block_ads_components_size": 96,
+    "hash_size": 32,
+    "schemes": [
+      {
+        "name": "Baseline-A",
+        "short_name": "BL-A",
+        "chain_proof_type": "HeaderChain",
+        "block_commitment_type": "Scattered",
+        "description": "区块头链同步 + 分散索引根（最原始方案）",
+        "block_header_size": 164
+      },
+      {
+        "name": "Baseline-B",
+        "short_name": "BL-B",
+        "chain_proof_type": "MerkleTree",
+        "block_commitment_type": "Scattered",
+        "description": "Merkle树 + 分散索引根（常见优化方案）",
+        "block_header_size": 164
+      },
+      {
+        "name": "Baseline-C",
+        "short_name": "BL-C",
+        "chain_proof_type": "MMR",
+        "block_commitment_type": "Scattered",
+        "description": "MMR + 分散索引根（仅链级优化）",
+        "block_header_size": 164
+      },
+      {
+        "name": "Ours",
+        "short_name": "Ours",
+        "chain_proof_type": "MMR",
+        "block_commitment_type": "Unified",
+        "description": "MMR + 一体化BlockADSRoot（本文方案）",
+        "block_header_size": 100
+      }
+    ]
+  },
+  "results": [
+    {
+      "chain_length": 100,
+      "log2_n": 6.643856189774724,
+      "test_block_height": 50,
+      "actual_mmr_proof_items": 7,
+      "schemes": [
+        {
+          "scheme_name": "Baseline-A",
+          "scheme_short_name": "BL-A",
+          "chain_proof_size_bytes": 8364,
+          "block_info_size_bytes": 0,
+          "total_proof_size_bytes": 8364,
+          "compression_ratio_vs_baseline_a": 1.0
+        },
+        {
+          "scheme_name": "Baseline-B",
+          "scheme_short_name": "BL-B",
+          "chain_proof_size_bytes": 224,
+          "block_info_size_bytes": 164,
+          "total_proof_size_bytes": 388,
+          "compression_ratio_vs_baseline_a": 21.556701030927837
+        },
+        {
+          "scheme_name": "Baseline-C",
+          "scheme_short_name": "BL-C",
+          "chain_proof_size_bytes": 224,
+          "block_info_size_bytes": 164,
+          "total_proof_size_bytes": 388,
+          "compression_ratio_vs_baseline_a": 21.556701030927837
+        },
+        {
+          "scheme_name": "Ours",
+          "scheme_short_name": "Ours",
+          "chain_proof_size_bytes": 224,
+          "block_info_size_bytes": 96,
+          "total_proof_size_bytes": 320,
+          "compression_ratio_vs_baseline_a": 26.1375
+        }
+      ],
+      "build_time_ms": 12453
+    },
+    {
+      "chain_length": 200,
+      "log2_n": 7.643856189774724,
+      "test_block_height": 100,
+      "actual_mmr_proof_items": 8,
+      "schemes": [
+        {
+          "scheme_name": "Baseline-A",
+          "scheme_short_name": "BL-A",
+          "chain_proof_size_bytes": 16564,
+          "block_info_size_bytes": 0,
+          "total_proof_size_bytes": 16564,
+          "compression_ratio_vs_baseline_a": 1.0
+        },
+        {
+          "scheme_name": "Baseline-B",
+          "scheme_short_name": "BL-B",
+          "chain_proof_size_bytes": 256,
+          "block_info_size_bytes": 164,
+          "total_proof_size_bytes": 420,
+          "compression_ratio_vs_baseline_a": 39.43809523809524
+        },
+        {
+          "scheme_name": "Baseline-C",
+          "scheme_short_name": "BL-C",
+          "chain_proof_size_bytes": 256,
+          "block_info_size_bytes": 164,
+          "total_proof_size_bytes": 420,
+          "compression_ratio_vs_baseline_a": 39.43809523809524
+        },
+        {
+          "scheme_name": "Ours",
+          "scheme_short_name": "Ours",
+          "chain_proof_size_bytes": 256,
+          "block_info_size_bytes": 96,
+          "total_proof_size_bytes": 352,
+          "compression_ratio_vs_baseline_a": 47.05681818181818
+        }
+      ],
+      "build_time_ms": 26798
+    },
+    {
+      "chain_length": 300,
+      "log2_n": 8.228818690495881,
+      "test_block_height": 150,
+      "actual_mmr_proof_items": 9,
+      "schemes": [
+        {
+          "scheme_name": "Baseline-A",
+          "scheme_short_name": "BL-A",
+          "chain_proof_size_bytes": 24764,
+          "block_info_size_bytes": 0,
+          "total_proof_size_bytes": 24764,
+          "compression_ratio_vs_baseline_a": 1.0
+        },
+        {
+          "scheme_name": "Baseline-B",
+          "scheme_short_name": "BL-B",
+          "chain_proof_size_bytes": 288,
+          "block_info_size_bytes": 164,
+          "total_proof_size_bytes": 452,
+          "compression_ratio_vs_baseline_a": 54.78761061946903
+        },
+        {
+          "scheme_name": "Baseline-C",
+          "scheme_short_name": "BL-C",
+          "chain_proof_size_bytes": 288,
+          "block_info_size_bytes": 164,
+          "total_proof_size_bytes": 452,
+          "compression_ratio_vs_baseline_a": 54.78761061946903
+        },
+        {
+          "scheme_name": "Ours",
+          "scheme_short_name": "Ours",
+          "chain_proof_size_bytes": 288,
+          "block_info_size_bytes": 96,
+          "total_proof_size_bytes": 384,
+          "compression_ratio_vs_baseline_a": 64.48958333333333
+        }
+      ],
+      "build_time_ms": 41393
+    },
+    {
+      "chain_length": 400,
+      "log2_n": 8.643856189774725,
+      "test_block_height": 200,
+      "actual_mmr_proof_items": 9,
+      "schemes": [
+        {
+          "scheme_name": "Baseline-A",
+          "scheme_short_name": "BL-A",
+          "chain_proof_size_bytes": 32964,
+          "block_info_size_bytes": 0,
+          "total_proof_size_bytes": 32964,
+          "compression_ratio_vs_baseline_a": 1.0
+        },
+        {
+          "scheme_name": "Baseline-B",
+          "scheme_short_name": "BL-B",
+          "chain_proof_size_bytes": 288,
+          "block_info_size_bytes": 164,
+          "total_proof_size_bytes": 452,
+          "compression_ratio_vs_baseline_a": 72.929203539823
+        },
+        {
+          "scheme_name": "Baseline-C",
+          "scheme_short_name": "BL-C",
+          "chain_proof_size_bytes": 288,
+          "block_info_size_bytes": 164,
+          "total_proof_size_bytes": 452,
+          "compression_ratio_vs_baseline_a": 72.929203539823
+        },
+        {
+          "scheme_name": "Ours",
+          "scheme_short_name": "Ours",
+          "chain_proof_size_bytes": 288,
+          "block_info_size_bytes": 96,
+          "total_proof_size_bytes": 384,
+          "compression_ratio_vs_baseline_a": 85.84375
+        }
+      ],
+      "build_time_ms": 55787
+    },
+    {
+      "chain_length": 500,
+      "log2_n": 8.965784284662087,
+      "test_block_height": 250,
+      "actual_mmr_proof_items": 9,
+      "schemes": [
+        {
+          "scheme_name": "Baseline-A",
+          "scheme_short_name": "BL-A",
+          "chain_proof_size_bytes": 41164,
+          "block_info_size_bytes": 0,
+          "total_proof_size_bytes": 41164,
+          "compression_ratio_vs_baseline_a": 1.0
+        },
+        {
+          "scheme_name": "Baseline-B",
+          "scheme_short_name": "BL-B",
+          "chain_proof_size_bytes": 288,
+          "block_info_size_bytes": 164,
+          "total_proof_size_bytes": 452,
+          "compression_ratio_vs_baseline_a": 91.070796460177
+        },
+        {
+          "scheme_name": "Baseline-C",
+          "scheme_short_name": "BL-C",
+          "chain_proof_size_bytes": 288,
+          "block_info_size_bytes": 164,
+          "total_proof_size_bytes": 452,
+          "compression_ratio_vs_baseline_a": 91.070796460177
+        },
+        {
+          "scheme_name": "Ours",
+          "scheme_short_name": "Ours",
+          "chain_proof_size_bytes": 288,
+          "block_info_size_bytes": 96,
+          "total_proof_size_bytes": 384,
+          "compression_ratio_vs_baseline_a": 107.19791666666667
+        }
+      ],
+      "build_time_ms": 70569
+    },
+    {
+      "chain_length": 750,
+      "log2_n": 9.550746785383243,
+      "test_block_height": 375,
+      "actual_mmr_proof_items": 10,
+      "schemes": [
+        {
+          "scheme_name": "Baseline-A",
+          "scheme_short_name": "BL-A",
+          "chain_proof_size_bytes": 61664,
+          "block_info_size_bytes": 0,
+          "total_proof_size_bytes": 61664,
+          "compression_ratio_vs_baseline_a": 1.0
+        },
+        {
+          "scheme_name": "Baseline-B",
+          "scheme_short_name": "BL-B",
+          "chain_proof_size_bytes": 320,
+          "block_info_size_bytes": 164,
+          "total_proof_size_bytes": 484,
+          "compression_ratio_vs_baseline_a": 127.40495867768595
+        },
+        {
+          "scheme_name": "Baseline-C",
+          "scheme_short_name": "BL-C",
+          "chain_proof_size_bytes": 320,
+          "block_info_size_bytes": 164,
+          "total_proof_size_bytes": 484,
+          "compression_ratio_vs_baseline_a": 127.40495867768595
+        },
+        {
+          "scheme_name": "Ours",
+          "scheme_short_name": "Ours",
+          "chain_proof_size_bytes": 320,
+          "block_info_size_bytes": 96,
+          "total_proof_size_bytes": 416,
+          "compression_ratio_vs_baseline_a": 148.23076923076923
+        }
+      ],
+      "build_time_ms": 107390
+    },
+    {
+      "chain_length": 1000,
+      "log2_n": 9.965784284662087,
+      "test_block_height": 500,
+      "actual_mmr_proof_items": 10,
+      "schemes": [
+        {
+          "scheme_name": "Baseline-A",
+          "scheme_short_name": "BL-A",
+          "chain_proof_size_bytes": 82164,
+          "block_info_size_bytes": 0,
+          "total_proof_size_bytes": 82164,
+          "compression_ratio_vs_baseline_a": 1.0
+        },
+        {
+          "scheme_name": "Baseline-B",
+          "scheme_short_name": "BL-B",
+          "chain_proof_size_bytes": 320,
+          "block_info_size_bytes": 164,
+          "total_proof_size_bytes": 484,
+          "compression_ratio_vs_baseline_a": 169.7603305785124
+        },
+        {
+          "scheme_name": "Baseline-C",
+          "scheme_short_name": "BL-C",
+          "chain_proof_size_bytes": 320,
+          "block_info_size_bytes": 164,
+          "total_proof_size_bytes": 484,
+          "compression_ratio_vs_baseline_a": 169.7603305785124
+        },
+        {
+          "scheme_name": "Ours",
+          "scheme_short_name": "Ours",
+          "chain_proof_size_bytes": 320,
+          "block_info_size_bytes": 96,
+          "total_proof_size_bytes": 416,
+          "compression_ratio_vs_baseline_a": 197.5096153846154
+        }
+      ],
+      "build_time_ms": 166625
+    },
+    {
+      "chain_length": 1500,
+      "log2_n": 10.550746785383243,
+      "test_block_height": 750,
+      "actual_mmr_proof_items": 11,
+      "schemes": [
+        {
+          "scheme_name": "Baseline-A",
+          "scheme_short_name": "BL-A",
+          "chain_proof_size_bytes": 123164,
+          "block_info_size_bytes": 0,
+          "total_proof_size_bytes": 123164,
+          "compression_ratio_vs_baseline_a": 1.0
+        },
+        {
+          "scheme_name": "Baseline-B",
+          "scheme_short_name": "BL-B",
+          "chain_proof_size_bytes": 352,
+          "block_info_size_bytes": 164,
+          "total_proof_size_bytes": 516,
+          "compression_ratio_vs_baseline_a": 238.68992248062017
+        },
+        {
+          "scheme_name": "Baseline-C",
+          "scheme_short_name": "BL-C",
+          "chain_proof_size_bytes": 352,
+          "block_info_size_bytes": 164,
+          "total_proof_size_bytes": 516,
+          "compression_ratio_vs_baseline_a": 238.68992248062017
+        },
+        {
+          "scheme_name": "Ours",
+          "scheme_short_name": "Ours",
+          "chain_proof_size_bytes": 352,
+          "block_info_size_bytes": 96,
+          "total_proof_size_bytes": 448,
+          "compression_ratio_vs_baseline_a": 274.91964285714283
+        }
+      ],
+      "build_time_ms": 368132
+    },
+    {
+      "chain_length": 2000,
+      "log2_n": 10.965784284662087,
+      "test_block_height": 1000,
+      "actual_mmr_proof_items": 11,
+      "schemes": [
+        {
+          "scheme_name": "Baseline-A",
+          "scheme_short_name": "BL-A",
+          "chain_proof_size_bytes": 164164,
+          "block_info_size_bytes": 0,
+          "total_proof_size_bytes": 164164,
+          "compression_ratio_vs_baseline_a": 1.0
+        },
+        {
+          "scheme_name": "Baseline-B",
+          "scheme_short_name": "BL-B",
+          "chain_proof_size_bytes": 352,
+          "block_info_size_bytes": 164,
+          "total_proof_size_bytes": 516,
+          "compression_ratio_vs_baseline_a": 318.14728682170545
+        },
+        {
+          "scheme_name": "Baseline-C",
+          "scheme_short_name": "BL-C",
+          "chain_proof_size_bytes": 352,
+          "block_info_size_bytes": 164,
+          "total_proof_size_bytes": 516,
+          "compression_ratio_vs_baseline_a": 318.14728682170545
+        },
+        {
+          "scheme_name": "Ours",
+          "scheme_short_name": "Ours",
+          "chain_proof_size_bytes": 352,
+          "block_info_size_bytes": 96,
+          "total_proof_size_bytes": 448,
+          "compression_ratio_vs_baseline_a": 366.4375
+        }
+      ],
+      "build_time_ms": 443688
+    },
+    {
+      "chain_length": 2500,
+      "log2_n": 11.287712379549449,
+      "test_block_height": 1250,
+      "actual_mmr_proof_items": 12,
+      "schemes": [
+        {
+          "scheme_name": "Baseline-A",
+          "scheme_short_name": "BL-A",
+          "chain_proof_size_bytes": 205164,
+          "block_info_size_bytes": 0,
+          "total_proof_size_bytes": 205164,
+          "compression_ratio_vs_baseline_a": 1.0
+        },
+        {
+          "scheme_name": "Baseline-B",
+          "scheme_short_name": "BL-B",
+          "chain_proof_size_bytes": 384,
+          "block_info_size_bytes": 164,
+          "total_proof_size_bytes": 548,
+          "compression_ratio_vs_baseline_a": 374.3868613138686
+        },
+        {
+          "scheme_name": "Baseline-C",
+          "scheme_short_name": "BL-C",
+          "chain_proof_size_bytes": 384,
+          "block_info_size_bytes": 164,
+          "total_proof_size_bytes": 548,
+          "compression_ratio_vs_baseline_a": 374.3868613138686
+        },
+        {
+          "scheme_name": "Ours",
+          "scheme_short_name": "Ours",
+          "chain_proof_size_bytes": 384,
+          "block_info_size_bytes": 96,
+          "total_proof_size_bytes": 480,
+          "compression_ratio_vs_baseline_a": 427.425
+        }
+      ],
+      "build_time_ms": 517117
+    },
+    {
+      "chain_length": 3000,
+      "log2_n": 11.550746785383243,
+      "test_block_height": 1500,
+      "actual_mmr_proof_items": 12,
+      "schemes": [
+        {
+          "scheme_name": "Baseline-A",
+          "scheme_short_name": "BL-A",
+          "chain_proof_size_bytes": 246164,
+          "block_info_size_bytes": 0,
+          "total_proof_size_bytes": 246164,
+          "compression_ratio_vs_baseline_a": 1.0
+        },
+        {
+          "scheme_name": "Baseline-B",
+          "scheme_short_name": "BL-B",
+          "chain_proof_size_bytes": 384,
+          "block_info_size_bytes": 164,
+          "total_proof_size_bytes": 548,
+          "compression_ratio_vs_baseline_a": 449.2043795620438
+        },
+        {
+          "scheme_name": "Baseline-C",
+          "scheme_short_name": "BL-C",
+          "chain_proof_size_bytes": 384,
+          "block_info_size_bytes": 164,
+          "total_proof_size_bytes": 548,
+          "compression_ratio_vs_baseline_a": 449.2043795620438
+        },
+        {
+          "scheme_name": "Ours",
+          "scheme_short_name": "Ours",
+          "chain_proof_size_bytes": 384,
+          "block_info_size_bytes": 96,
+          "total_proof_size_bytes": 480,
+          "compression_ratio_vs_baseline_a": 512.8416666666667
+        }
+      ],
+      "build_time_ms": 591123
+    },
+    {
+      "chain_length": 4000,
+      "log2_n": 11.965784284662087,
+      "test_block_height": 2000,
+      "actual_mmr_proof_items": 12,
+      "schemes": [
+        {
+          "scheme_name": "Baseline-A",
+          "scheme_short_name": "BL-A",
+          "chain_proof_size_bytes": 328164,
+          "block_info_size_bytes": 0,
+          "total_proof_size_bytes": 328164,
+          "compression_ratio_vs_baseline_a": 1.0
+        },
+        {
+          "scheme_name": "Baseline-B",
+          "scheme_short_name": "BL-B",
+          "chain_proof_size_bytes": 384,
+          "block_info_size_bytes": 164,
+          "total_proof_size_bytes": 548,
+          "compression_ratio_vs_baseline_a": 598.8394160583941
+        },
+        {
+          "scheme_name": "Baseline-C",
+          "scheme_short_name": "BL-C",
+          "chain_proof_size_bytes": 384,
+          "block_info_size_bytes": 164,
+          "total_proof_size_bytes": 548,
+          "compression_ratio_vs_baseline_a": 598.8394160583941
+        },
+        {
+          "scheme_name": "Ours",
+          "scheme_short_name": "Ours",
+          "chain_proof_size_bytes": 384,
+          "block_info_size_bytes": 96,
+          "total_proof_size_bytes": 480,
+          "compression_ratio_vs_baseline_a": 683.675
+        }
+      ],
+      "build_time_ms": 744032
+    },
+    {
+      "chain_length": 5000,
+      "log2_n": 12.287712379549449,
+      "test_block_height": 2500,
+      "actual_mmr_proof_items": 13,
+      "schemes": [
+        {
+          "scheme_name": "Baseline-A",
+          "scheme_short_name": "BL-A",
+          "chain_proof_size_bytes": 410164,
+          "block_info_size_bytes": 0,
+          "total_proof_size_bytes": 410164,
+          "compression_ratio_vs_baseline_a": 1.0
+        },
+        {
+          "scheme_name": "Baseline-B",
+          "scheme_short_name": "BL-B",
+          "chain_proof_size_bytes": 416,
+          "block_info_size_bytes": 164,
+          "total_proof_size_bytes": 580,
+          "compression_ratio_vs_baseline_a": 707.1793103448276
+        },
+        {
+          "scheme_name": "Baseline-C",
+          "scheme_short_name": "BL-C",
+          "chain_proof_size_bytes": 416,
+          "block_info_size_bytes": 164,
+          "total_proof_size_bytes": 580,
+          "compression_ratio_vs_baseline_a": 707.1793103448276
+        },
+        {
+          "scheme_name": "Ours",
+          "scheme_short_name": "Ours",
+          "chain_proof_size_bytes": 416,
+          "block_info_size_bytes": 96,
+          "total_proof_size_bytes": 512,
+          "compression_ratio_vs_baseline_a": 801.1015625
+        }
+      ],
+      "build_time_ms": 902648
+    },
+    {
+      "chain_length": 6000,
+      "log2_n": 12.550746785383243,
+      "test_block_height": 3000,
+      "actual_mmr_proof_items": 13,
+      "schemes": [
+        {
+          "scheme_name": "Baseline-A",
+          "scheme_short_name": "BL-A",
+          "chain_proof_size_bytes": 492164,
+          "block_info_size_bytes": 0,
+          "total_proof_size_bytes": 492164,
+          "compression_ratio_vs_baseline_a": 1.0
+        },
+        {
+          "scheme_name": "Baseline-B",
+          "scheme_short_name": "BL-B",
+          "chain_proof_size_bytes": 416,
+          "block_info_size_bytes": 164,
+          "total_proof_size_bytes": 580,
+          "compression_ratio_vs_baseline_a": 848.5586206896552
+        },
+        {
+          "scheme_name": "Baseline-C",
+          "scheme_short_name": "BL-C",
+          "chain_proof_size_bytes": 416,
+          "block_info_size_bytes": 164,
+          "total_proof_size_bytes": 580,
+          "compression_ratio_vs_baseline_a": 848.5586206896552
+        },
+        {
+          "scheme_name": "Ours",
+          "scheme_short_name": "Ours",
+          "chain_proof_size_bytes": 416,
+          "block_info_size_bytes": 96,
+          "total_proof_size_bytes": 512,
+          "compression_ratio_vs_baseline_a": 961.2578125
+        }
+      ],
+      "build_time_ms": 1061098
+    },
+    {
+      "chain_length": 7000,
+      "log2_n": 12.77313920671969,
+      "test_block_height": 3500,
+      "actual_mmr_proof_items": 13,
+      "schemes": [
+        {
+          "scheme_name": "Baseline-A",
+          "scheme_short_name": "BL-A",
+          "chain_proof_size_bytes": 574164,
+          "block_info_size_bytes": 0,
+          "total_proof_size_bytes": 574164,
+          "compression_ratio_vs_baseline_a": 1.0
+        },
+        {
+          "scheme_name": "Baseline-B",
+          "scheme_short_name": "BL-B",
+          "chain_proof_size_bytes": 416,
+          "block_info_size_bytes": 164,
+          "total_proof_size_bytes": 580,
+          "compression_ratio_vs_baseline_a": 989.9379310344827
+        },
+        {
+          "scheme_name": "Baseline-C",
+          "scheme_short_name": "BL-C",
+          "chain_proof_size_bytes": 416,
+          "block_info_size_bytes": 164,
+          "total_proof_size_bytes": 580,
+          "compression_ratio_vs_baseline_a": 989.9379310344827
+        },
+        {
+          "scheme_name": "Ours",
+          "scheme_short_name": "Ours",
+          "chain_proof_size_bytes": 416,
+          "block_info_size_bytes": 96,
+          "total_proof_size_bytes": 512,
+          "compression_ratio_vs_baseline_a": 1121.4140625
+        }
+      ],
+      "build_time_ms": 1211418
+    },
+    {
+      "chain_length": 8000,
+      "log2_n": 12.965784284662087,
+      "test_block_height": 4000,
+      "actual_mmr_proof_items": 13,
+      "schemes": [
+        {
+          "scheme_name": "Baseline-A",
+          "scheme_short_name": "BL-A",
+          "chain_proof_size_bytes": 656164,
+          "block_info_size_bytes": 0,
+          "total_proof_size_bytes": 656164,
+          "compression_ratio_vs_baseline_a": 1.0
+        },
+        {
+          "scheme_name": "Baseline-B",
+          "scheme_short_name": "BL-B",
+          "chain_proof_size_bytes": 416,
+          "block_info_size_bytes": 164,
+          "total_proof_size_bytes": 580,
+          "compression_ratio_vs_baseline_a": 1131.3172413793104
+        },
+        {
+          "scheme_name": "Baseline-C",
+          "scheme_short_name": "BL-C",
+          "chain_proof_size_bytes": 416,
+          "block_info_size_bytes": 164,
+          "total_proof_size_bytes": 580,
+          "compression_ratio_vs_baseline_a": 1131.3172413793104
+        },
+        {
+          "scheme_name": "Ours",
+          "scheme_short_name": "Ours",
+          "chain_proof_size_bytes": 416,
+          "block_info_size_bytes": 96,
+          "total_proof_size_bytes": 512,
+          "compression_ratio_vs_baseline_a": 1281.5703125
+        }
+      ],
+      "build_time_ms": 1359651
+    },
+    {
+      "chain_length": 9000,
+      "log2_n": 13.1357092861044,
+      "test_block_height": 4500,
+      "actual_mmr_proof_items": 14,
+      "schemes": [
+        {
+          "scheme_name": "Baseline-A",
+          "scheme_short_name": "BL-A",
+          "chain_proof_size_bytes": 738164,
+          "block_info_size_bytes": 0,
+          "total_proof_size_bytes": 738164,
+          "compression_ratio_vs_baseline_a": 1.0
+        },
+        {
+          "scheme_name": "Baseline-B",
+          "scheme_short_name": "BL-B",
+          "chain_proof_size_bytes": 448,
+          "block_info_size_bytes": 164,
+          "total_proof_size_bytes": 612,
+          "compression_ratio_vs_baseline_a": 1206.1503267973856
+        },
+        {
+          "scheme_name": "Baseline-C",
+          "scheme_short_name": "BL-C",
+          "chain_proof_size_bytes": 448,
+          "block_info_size_bytes": 164,
+          "total_proof_size_bytes": 612,
+          "compression_ratio_vs_baseline_a": 1206.1503267973856
+        },
+        {
+          "scheme_name": "Ours",
+          "scheme_short_name": "Ours",
+          "chain_proof_size_bytes": 448,
+          "block_info_size_bytes": 96,
+          "total_proof_size_bytes": 544,
+          "compression_ratio_vs_baseline_a": 1356.9191176470588
+        }
+      ],
+      "build_time_ms": 1502832
+    },
+    {
+      "chain_length": 10000,
+      "log2_n": 13.287712379549449,
+      "test_block_height": 5000,
+      "actual_mmr_proof_items": 14,
+      "schemes": [
+        {
+          "scheme_name": "Baseline-A",
+          "scheme_short_name": "BL-A",
+          "chain_proof_size_bytes": 820164,
+          "block_info_size_bytes": 0,
+          "total_proof_size_bytes": 820164,
+          "compression_ratio_vs_baseline_a": 1.0
+        },
+        {
+          "scheme_name": "Baseline-B",
+          "scheme_short_name": "BL-B",
+          "chain_proof_size_bytes": 448,
+          "block_info_size_bytes": 164,
+          "total_proof_size_bytes": 612,
+          "compression_ratio_vs_baseline_a": 1340.137254901961
+        },
+        {
+          "scheme_name": "Baseline-C",
+          "scheme_short_name": "BL-C",
+          "chain_proof_size_bytes": 448,
+          "block_info_size_bytes": 164,
+          "total_proof_size_bytes": 612,
+          "compression_ratio_vs_baseline_a": 1340.137254901961
+        },
+        {
+          "scheme_name": "Ours",
+          "scheme_short_name": "Ours",
+          "chain_proof_size_bytes": 448,
+          "block_info_size_bytes": 96,
+          "total_proof_size_bytes": 544,
+          "compression_ratio_vs_baseline_a": 1507.6544117647059
+        }
+      ],
+      "build_time_ms": 1648828
+    },
+    {
+      "chain_length": 12000,
+      "log2_n": 13.550746785383243,
+      "test_block_height": 6000,
+      "actual_mmr_proof_items": 14,
+      "schemes": [
+        {
+          "scheme_name": "Baseline-A",
+          "scheme_short_name": "BL-A",
+          "chain_proof_size_bytes": 984164,
+          "block_info_size_bytes": 0,
+          "total_proof_size_bytes": 984164,
+          "compression_ratio_vs_baseline_a": 1.0
+        },
+        {
+          "scheme_name": "Baseline-B",
+          "scheme_short_name": "BL-B",
+          "chain_proof_size_bytes": 448,
+          "block_info_size_bytes": 164,
+          "total_proof_size_bytes": 612,
+          "compression_ratio_vs_baseline_a": 1608.111111111111
+        },
+        {
+          "scheme_name": "Baseline-C",
+          "scheme_short_name": "BL-C",
+          "chain_proof_size_bytes": 448,
+          "block_info_size_bytes": 164,
+          "total_proof_size_bytes": 612,
+          "compression_ratio_vs_baseline_a": 1608.111111111111
+        },
+        {
+          "scheme_name": "Ours",
+          "scheme_short_name": "Ours",
+          "chain_proof_size_bytes": 448,
+          "block_info_size_bytes": 96,
+          "total_proof_size_bytes": 544,
+          "compression_ratio_vs_baseline_a": 1809.125
+        }
+      ],
+      "build_time_ms": 1948991
+    },
+    {
+      "chain_length": 14000,
+      "log2_n": 13.77313920671969,
+      "test_block_height": 7000,
+      "actual_mmr_proof_items": 14,
+      "schemes": [
+        {
+          "scheme_name": "Baseline-A",
+          "scheme_short_name": "BL-A",
+          "chain_proof_size_bytes": 1148164,
+          "block_info_size_bytes": 0,
+          "total_proof_size_bytes": 1148164,
+          "compression_ratio_vs_baseline_a": 1.0
+        },
+        {
+          "scheme_name": "Baseline-B",
+          "scheme_short_name": "BL-B",
+          "chain_proof_size_bytes": 448,
+          "block_info_size_bytes": 164,
+          "total_proof_size_bytes": 612,
+          "compression_ratio_vs_baseline_a": 1876.0849673202615
+        },
+        {
+          "scheme_name": "Baseline-C",
+          "scheme_short_name": "BL-C",
+          "chain_proof_size_bytes": 448,
+          "block_info_size_bytes": 164,
+          "total_proof_size_bytes": 612,
+          "compression_ratio_vs_baseline_a": 1876.0849673202615
+        },
+        {
+          "scheme_name": "Ours",
+          "scheme_short_name": "Ours",
+          "chain_proof_size_bytes": 448,
+          "block_info_size_bytes": 96,
+          "total_proof_size_bytes": 544,
+          "compression_ratio_vs_baseline_a": 2110.595588235294
+        }
+      ],
+      "build_time_ms": 2243920
+    },
+    {
+      "chain_length": 16000,
+      "log2_n": 13.965784284662087,
+      "test_block_height": 8000,
+      "actual_mmr_proof_items": 14,
+      "schemes": [
+        {
+          "scheme_name": "Baseline-A",
+          "scheme_short_name": "BL-A",
+          "chain_proof_size_bytes": 1312164,
+          "block_info_size_bytes": 0,
+          "total_proof_size_bytes": 1312164,
+          "compression_ratio_vs_baseline_a": 1.0
+        },
+        {
+          "scheme_name": "Baseline-B",
+          "scheme_short_name": "BL-B",
+          "chain_proof_size_bytes": 448,
+          "block_info_size_bytes": 164,
+          "total_proof_size_bytes": 612,
+          "compression_ratio_vs_baseline_a": 2144.0588235294117
+        },
+        {
+          "scheme_name": "Baseline-C",
+          "scheme_short_name": "BL-C",
+          "chain_proof_size_bytes": 448,
+          "block_info_size_bytes": 164,
+          "total_proof_size_bytes": 612,
+          "compression_ratio_vs_baseline_a": 2144.0588235294117
+        },
+        {
+          "scheme_name": "Ours",
+          "scheme_short_name": "Ours",
+          "chain_proof_size_bytes": 448,
+          "block_info_size_bytes": 96,
+          "total_proof_size_bytes": 544,
+          "compression_ratio_vs_baseline_a": 2412.0661764705883
+        }
+      ],
+      "build_time_ms": 2544217
+    },
+    {
+      "chain_length": 18000,
+      "log2_n": 14.1357092861044,
+      "test_block_height": 9000,
+      "actual_mmr_proof_items": 15,
+      "schemes": [
+        {
+          "scheme_name": "Baseline-A",
+          "scheme_short_name": "BL-A",
+          "chain_proof_size_bytes": 1476164,
+          "block_info_size_bytes": 0,
+          "total_proof_size_bytes": 1476164,
+          "compression_ratio_vs_baseline_a": 1.0
+        },
+        {
+          "scheme_name": "Baseline-B",
+          "scheme_short_name": "BL-B",
+          "chain_proof_size_bytes": 480,
+          "block_info_size_bytes": 164,
+          "total_proof_size_bytes": 644,
+          "compression_ratio_vs_baseline_a": 2292.1801242236024
+        },
+        {
+          "scheme_name": "Baseline-C",
+          "scheme_short_name": "BL-C",
+          "chain_proof_size_bytes": 480,
+          "block_info_size_bytes": 164,
+          "total_proof_size_bytes": 644,
+          "compression_ratio_vs_baseline_a": 2292.1801242236024
+        },
+        {
+          "scheme_name": "Ours",
+          "scheme_short_name": "Ours",
+          "chain_proof_size_bytes": 480,
+          "block_info_size_bytes": 96,
+          "total_proof_size_bytes": 576,
+          "compression_ratio_vs_baseline_a": 2562.784722222222
+        }
+      ],
+      "build_time_ms": 2850642
+    },
+    {
+      "chain_length": 20000,
+      "log2_n": 14.287712379549449,
+      "test_block_height": 10000,
+      "actual_mmr_proof_items": 15,
+      "schemes": [
+        {
+          "scheme_name": "Baseline-A",
+          "scheme_short_name": "BL-A",
+          "chain_proof_size_bytes": 1640164,
+          "block_info_size_bytes": 0,
+          "total_proof_size_bytes": 1640164,
+          "compression_ratio_vs_baseline_a": 1.0
+        },
+        {
+          "scheme_name": "Baseline-B",
+          "scheme_short_name": "BL-B",
+          "chain_proof_size_bytes": 480,
+          "block_info_size_bytes": 164,
+          "total_proof_size_bytes": 644,
+          "compression_ratio_vs_baseline_a": 2546.8385093167703
+        },
+        {
+          "scheme_name": "Baseline-C",
+          "scheme_short_name": "BL-C",
+          "chain_proof_size_bytes": 480,
+          "block_info_size_bytes": 164,
+          "total_proof_size_bytes": 644,
+          "compression_ratio_vs_baseline_a": 2546.8385093167703
+        },
+        {
+          "scheme_name": "Ours",
+          "scheme_short_name": "Ours",
+          "chain_proof_size_bytes": 480,
+          "block_info_size_bytes": 96,
+          "total_proof_size_bytes": 576,
+          "compression_ratio_vs_baseline_a": 2847.5069444444443
+        }
+      ],
+      "build_time_ms": 3156095
+    }
+  ],
+  "summary": {
+    "avg_compression_ratios": [
+      [
+        "Baseline-A",
+        1.0
+      ],
+      [
+        "Baseline-B",
+        836.816077523048
+      ],
+      [
+        "Baseline-C",
+        836.816077523048
+      ],
+      [
+        "Ours",
+        944.0765423089273
+      ]
+    ],
+    "max_chain_proof_sizes": [
+      [
+        "Baseline-A",
+        1640164
+      ],
+      [
+        "Baseline-B",
+        644
+      ],
+      [
+        "Baseline-C",
+        644
+      ],
+      [
+        "Ours",
+        576
+      ]
+    ],
+    "ours_improvement_vs_baselines": [
+      [
+        "Baseline-A",
+        944.0765423089273
+      ],
+      [
+        "Baseline-B",
+        1.1471646710777146
+      ],
+      [
+        "Baseline-C",
+        1.1471646710777146
+      ]
+    ],
+    "total_data_points": 23
+  }
+}
