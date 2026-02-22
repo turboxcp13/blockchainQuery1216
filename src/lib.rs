@@ -26,7 +26,7 @@ use chain::{
 use digest::{Digest, Digestible};
 use rocksdb::{self, DB};
 use std::{
-    collections::HashSet,
+    collections::{BTreeMap, HashSet},
     fs,
     path::{Path, PathBuf},
     sync::Arc,
@@ -376,6 +376,8 @@ impl SimChain {
     }
 
     /// 生成带 B+ 树索引证明的两层式证明
+    ///
+    /// 收集目标 B+ 树根的所有兄弟哈希，使验证端能重算 multi_ads_hash
     pub fn gen_two_layer_proof_with_bplus_tree(
         &self,
         block_height: Height,
@@ -384,28 +386,54 @@ impl SimChain {
     ) -> Result<TwoLayerProof> {
         let block_content = (&self as &SimChain).read_block_content(block_height)?;
         
-        // 获取对应时间窗口的 B+ 树根
         let ads = &block_content.ads;
-        let block_ads = ads.read_adses()
+        let all_adses = ads.read_adses();
+
+        let block_ads = all_adses
             .get(&time_window)
-            .context("Time window not found")?
-            .clone();
+            .context("Time window not found")?;
         
+        // 目标 B+ 树根哈希
         let root_hash = block_ads.bplus_tree_roots
             .get(dimension as usize)
             .context("Dimension not found")?
             .to_digest();
 
+        // 收集同一时间窗口内其他维度的 B+ 树根哈希
+        let mut sibling_bplus_hashes = BTreeMap::new();
+        for (dim, bplus_root) in block_ads.bplus_tree_roots.iter().enumerate() {
+            let dim = dim as u8;
+            if dim != dimension {
+                sibling_bplus_hashes.insert(dim, bplus_root.to_digest());
+            }
+        }
+
+        // 同一时间窗口的 Trie 根哈希
+        let trie_root_hash = block_ads.trie_root.to_digest();
+
+        // 收集其他时间窗口的 ads_hash
+        let mut sibling_ads_hashes = BTreeMap::new();
+        for (&tw, tw_ads) in all_adses {
+            if tw != time_window {
+                sibling_ads_hashes.insert(tw, tw_ads.to_digest());
+            }
+        }
+
         let index_proof = IndexProof::BPlusTree {
             dimension,
             time_window,
             root_hash,
+            sibling_bplus_hashes,
+            trie_root_hash,
+            sibling_ads_hashes,
         };
 
         self.gen_two_layer_proof(block_height, Some(index_proof))
     }
 
     /// 生成带 Trie 索引证明的两层式证明
+    ///
+    /// 收集目标 Trie 根的所有兄弟哈希，使验证端能重算 multi_ads_hash
     pub fn gen_two_layer_proof_with_trie(
         &self,
         block_height: Height,
@@ -413,18 +441,38 @@ impl SimChain {
     ) -> Result<TwoLayerProof> {
         let block_content = (&self as &SimChain).read_block_content(block_height)?;
         
-        // 获取对应时间窗口的 Trie 根
         let ads = &block_content.ads;
-        let block_ads = ads.read_adses()
+        let all_adses = ads.read_adses();
+
+        let block_ads = all_adses
             .get(&time_window)
-            .context("Time window not found")?
-            .clone();
+            .context("Time window not found")?;
         
+        // 目标 Trie 根哈希
         let root_hash = block_ads.trie_root.to_digest();
+
+        // 预计算同一时间窗口所有 B+ 树根的聚合哈希
+        // 与 verify::hash::bplus_roots_hash 计算方式一致
+        let bplus_hashes: BTreeMap<u8, Digest> = block_ads.bplus_tree_roots
+            .iter()
+            .enumerate()
+            .map(|(dim, root)| (dim as u8, root.to_digest()))
+            .collect();
+        let bplus_roots_hash = chain::verify::hash::bplus_roots_hash(bplus_hashes.iter());
+
+        // 收集其他时间窗口的 ads_hash
+        let mut sibling_ads_hashes = BTreeMap::new();
+        for (&tw, tw_ads) in all_adses {
+            if tw != time_window {
+                sibling_ads_hashes.insert(tw, tw_ads.to_digest());
+            }
+        }
 
         let index_proof = IndexProof::Trie {
             time_window,
             root_hash,
+            bplus_roots_hash,
+            sibling_ads_hashes,
         };
 
         self.gen_two_layer_proof(block_height, Some(index_proof))

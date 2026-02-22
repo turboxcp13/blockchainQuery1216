@@ -12,7 +12,8 @@
 //! ## 两层式验证结构
 //! - 第一层（链级）: MMR证明验证，验证BlockADSRoot属于主链
 //! - 第二层（块级）: BlockADSRoot展开验证，验证Components一致性
-//!
+//! 问题1：IndexProof 对 BPlusTree/Trie 的验证过于简单
+//! 在 two_layer_proof.rs 第 220–225 行：
 //! ## 运行命令
 //! ```
 //! cargo test --test experiment2_verify_time --release -- --nocapture
@@ -33,6 +34,7 @@ use vchain_plus::utils::{load_raw_obj_from_file, KeyPair};
 use vchain_plus::SimChain;
 use serde::{Deserialize, Serialize};
 use std::io::Write;
+use std::hint::black_box;
 
 // ============================================================================
 // 实验配置常量
@@ -45,7 +47,13 @@ const KEY_PATH: &str = "output/pk_eth.key";
 const DATASET_PATH: &str = "data/dataset/eth.dat";
 
 /// 验证迭代次数（用于取平均值，提高测量精度）
-const VERIFY_ITERATIONS: usize = 100;
+const VERIFY_ITERATIONS: usize = 500;
+
+/// 预热迭代次数（不计入统计，消除冷启动效应）
+const WARMUP_ITERATIONS: usize = 50;
+
+/// 截断均值比例（去除上下各 TRIM_PERCENT% 的极端值）
+const TRIM_PERCENT: f64 = 10.0;
 
 /// 单个哈希大小（字节）
 const HASH_SIZE: usize = 32;
@@ -163,6 +171,8 @@ impl SchemeConfig {
 struct TimeStats {
     /// 平均值（微秒）
     mean_us: f64,
+    /// 截断均值（微秒）- 去除上下各TRIM_PERCENT%极端值后的均值
+    trimmed_mean_us: f64,
     /// 最小值（微秒）
     min_us: u64,
     /// 最大值（微秒）
@@ -243,6 +253,8 @@ struct ExperimentMetadata {
     key_path: String,
     chain_lengths: Vec<u64>,
     verify_iterations: usize,
+    warmup_iterations: usize,
+    trim_percent: f64,
     hash_size: usize,
     scattered_block_header_size: usize,
     unified_block_header_size: usize,
@@ -321,11 +333,12 @@ fn calculate_std(values: &[u64], mean: f64) -> f64 {
     variance.sqrt()
 }
 
-/// 计算时间统计
+/// 计算时间统计（含截断均值）
 fn calculate_time_stats(times_ns: &[u64]) -> TimeStats {
     if times_ns.is_empty() {
         return TimeStats {
             mean_us: 0.0,
+            trimmed_mean_us: 0.0,
             min_us: 0,
             max_us: 0,
             std_us: 0.0,
@@ -336,25 +349,57 @@ fn calculate_time_stats(times_ns: &[u64]) -> TimeStats {
     let min_us = times_ns.iter().min().unwrap() / 1000;
     let max_us = times_ns.iter().max().unwrap() / 1000;
     let std_us = calculate_std(times_ns, mean_ns) / 1000.0;
+
+    // 计算截断均值：排序后去除上下各 TRIM_PERCENT% 的极端值
+    let trimmed_mean_us = calculate_trimmed_mean_us(times_ns, TRIM_PERCENT);
     
     TimeStats {
         mean_us,
+        trimmed_mean_us,
         min_us,
         max_us,
         std_us,
     }
 }
 
+/// 计算截断均值（微秒）
+/// 对原始纳秒数据排序，去除上下各 trim_percent% 的极端值后取均值
+fn calculate_trimmed_mean_us(times_ns: &[u64], trim_percent: f64) -> f64 {
+    let n = times_ns.len();
+    if n == 0 {
+        return 0.0;
+    }
+    let mut sorted = times_ns.to_vec();
+    sorted.sort_unstable();
+    
+    let trim_count = ((n as f64) * trim_percent / 100.0).floor() as usize;
+    // 确保至少保留1个元素
+    let start = trim_count;
+    let end = n.saturating_sub(trim_count).max(start + 1);
+    
+    let trimmed = &sorted[start..end];
+    let sum: u64 = trimmed.iter().sum();
+    (sum as f64 / trimmed.len() as f64) / 1000.0  // 纳秒 → 微秒
+}
+
 /// 测量单次哈希计算时间
 fn measure_single_hash_time(iterations: usize) -> TimeStats {
     let test_data = [0u8; 32];
-    let mut times: Vec<u64> = Vec::with_capacity(iterations);
     
+    // 预热阶段：消除冷启动效应（CPU缓存、分支预测器等）
+    for _ in 0..WARMUP_ITERATIONS {
+        let mut state = blake2().to_state();
+        state.update(&test_data);
+        black_box(state.finalize());
+    }
+    
+    // 正式测量阶段
+    let mut times: Vec<u64> = Vec::with_capacity(iterations);
     for _ in 0..iterations {
         let start = Instant::now();
         let mut state = blake2().to_state();
         state.update(&test_data);
-        let _result = state.finalize();
+        black_box(state.finalize());
         times.push(start.elapsed().as_nanos() as u64);
     }
     
@@ -364,13 +409,21 @@ fn measure_single_hash_time(iterations: usize) -> TimeStats {
 /// 测量块头哈希计算时间（分散索引根块头，164B）
 fn measure_header_hash_scattered_time(iterations: usize) -> TimeStats {
     let test_data = [0u8; SCATTERED_BLOCK_HEADER_SIZE];
-    let mut times: Vec<u64> = Vec::with_capacity(iterations);
     
+    // 预热阶段
+    for _ in 0..WARMUP_ITERATIONS {
+        let mut state = blake2().to_state();
+        state.update(&test_data);
+        black_box(state.finalize());
+    }
+    
+    // 正式测量阶段
+    let mut times: Vec<u64> = Vec::with_capacity(iterations);
     for _ in 0..iterations {
         let start = Instant::now();
         let mut state = blake2().to_state();
         state.update(&test_data);
-        let _result = state.finalize();
+        black_box(state.finalize());
         times.push(start.elapsed().as_nanos() as u64);
     }
     
@@ -380,13 +433,21 @@ fn measure_header_hash_scattered_time(iterations: usize) -> TimeStats {
 /// 测量块头哈希计算时间（一体化块头，100B）
 fn measure_header_hash_unified_time(iterations: usize) -> TimeStats {
     let test_data = [0u8; UNIFIED_BLOCK_HEADER_SIZE];
-    let mut times: Vec<u64> = Vec::with_capacity(iterations);
     
+    // 预热阶段
+    for _ in 0..WARMUP_ITERATIONS {
+        let mut state = blake2().to_state();
+        state.update(&test_data);
+        black_box(state.finalize());
+    }
+    
+    // 正式测量阶段
+    let mut times: Vec<u64> = Vec::with_capacity(iterations);
     for _ in 0..iterations {
         let start = Instant::now();
         let mut state = blake2().to_state();
         state.update(&test_data);
-        let _result = state.finalize();
+        black_box(state.finalize());
         times.push(start.elapsed().as_nanos() as u64);
     }
     
@@ -401,21 +462,26 @@ fn measure_ads_root_expand_time(iterations: usize) -> TimeStats {
     let component3 = Digest::default();
     let expected_root = Digest::default();
     
-    let mut times: Vec<u64> = Vec::with_capacity(iterations);
-    
-    for _ in 0..iterations {
-        let start = Instant::now();
-        
-        // 计算 Hash(c1 || c2 || c3)
+    // 预热阶段
+    for _ in 0..WARMUP_ITERATIONS {
         let mut state = blake2().to_state();
         state.update(component1.as_bytes());
         state.update(component2.as_bytes());
         state.update(component3.as_bytes());
         let computed_root = Digest::from(state.finalize());
-        
-        // 比较（实际验证中会检查是否相等）
-        let _is_valid = computed_root == expected_root;
-        
+        black_box(computed_root == expected_root);
+    }
+    
+    // 正式测量阶段
+    let mut times: Vec<u64> = Vec::with_capacity(iterations);
+    for _ in 0..iterations {
+        let start = Instant::now();
+        let mut state = blake2().to_state();
+        state.update(component1.as_bytes());
+        state.update(component2.as_bytes());
+        state.update(component3.as_bytes());
+        let computed_root = Digest::from(state.finalize());
+        black_box(computed_root == expected_root);
         times.push(start.elapsed().as_nanos() as u64);
     }
     
@@ -432,11 +498,16 @@ fn measure_mmr_verify_time(
     let mmr_root = chain.get_mmr_root();
     let mmr_items = proof.mmr_proof.proof_items.len();
     
-    let mut times: Vec<u64> = Vec::with_capacity(iterations);
+    // 预热阶段
+    for _ in 0..WARMUP_ITERATIONS {
+        black_box(proof.verify(mmr_root)?);
+    }
     
+    // 正式测量阶段
+    let mut times: Vec<u64> = Vec::with_capacity(iterations);
     for _ in 0..iterations {
         let start = Instant::now();
-        let _ = proof.verify(mmr_root)?;
+        black_box(proof.verify(mmr_root)?);
         times.push(start.elapsed().as_nanos() as u64);
     }
     
@@ -457,6 +528,17 @@ fn measure_two_layer_verify_time(
     let component2 = Digest::default();
     let component3 = Digest::default();
     
+    // 预热阶段：同时预热MMR验证和哈希计算
+    for _ in 0..WARMUP_ITERATIONS {
+        black_box(proof.verify(mmr_root)?);
+        let mut state = blake2().to_state();
+        state.update(component1.as_bytes());
+        state.update(component2.as_bytes());
+        state.update(component3.as_bytes());
+        black_box(Digest::from(state.finalize()));
+    }
+    
+    // 正式测量阶段
     let mut layer1_times: Vec<u64> = Vec::with_capacity(iterations);
     let mut layer2_times: Vec<u64> = Vec::with_capacity(iterations);
     let mut total_times: Vec<u64> = Vec::with_capacity(iterations);
@@ -466,7 +548,7 @@ fn measure_two_layer_verify_time(
         
         // 第一层：MMR验证
         let layer1_start = Instant::now();
-        let _ = proof.verify(mmr_root)?;
+        black_box(proof.verify(mmr_root)?);
         let layer1_elapsed = layer1_start.elapsed().as_nanos() as u64;
         layer1_times.push(layer1_elapsed);
         
@@ -476,7 +558,7 @@ fn measure_two_layer_verify_time(
         state.update(component1.as_bytes());
         state.update(component2.as_bytes());
         state.update(component3.as_bytes());
-        let _computed_root = Digest::from(state.finalize());
+        black_box(Digest::from(state.finalize()));
         let layer2_elapsed = layer2_start.elapsed().as_nanos() as u64;
         layer2_times.push(layer2_elapsed);
         
@@ -487,8 +569,8 @@ fn measure_two_layer_verify_time(
     let layer2_stats = calculate_time_stats(&layer2_times);
     let total_stats = calculate_time_stats(&total_times);
     
-    let layer2_overhead_percent = if total_stats.mean_us > 0.0 {
-        layer2_stats.mean_us / total_stats.mean_us * 100.0
+    let layer2_overhead_percent = if total_stats.trimmed_mean_us > 0.0 {
+        layer2_stats.trimmed_mean_us / total_stats.trimmed_mean_us * 100.0
     } else {
         0.0
     };
@@ -515,27 +597,27 @@ fn calculate_scheme_verify_times(
         ChainProofType::HeaderChain => {
             // 区块头链：需要验证 (n-h+1) 个区块头哈希
             let headers_to_verify = chain_length - test_block_height + 1;
-            let chain_time = headers_to_verify as f64 * base_times.header_hash_scattered.mean_us;
+            let chain_time = headers_to_verify as f64 * base_times.header_hash_scattered.trimmed_mean_us;
             (chain_time, 0.0)
         }
         ChainProofType::Merkle => {
             // Merkle树：log₂(n) 个哈希验证 + 块头哈希
             let tree_height = (chain_length as f64).log2().ceil() as u64;
-            let chain_time = tree_height as f64 * base_times.single_hash.mean_us;
-            let block_time = base_times.header_hash_scattered.mean_us;
+            let chain_time = tree_height as f64 * base_times.single_hash.trimmed_mean_us;
+            let block_time = base_times.header_hash_scattered.trimmed_mean_us;
             (chain_time, block_time)
         }
         ChainProofType::MMR => {
             match scheme.block_verify_type {
                 BlockVerifyType::HeaderHash => {
                     // MMR-Scattered：MMR验证 + 块头哈希
-                    (mmr_verify_time_us, base_times.header_hash_scattered.mean_us)
+                    (mmr_verify_time_us, base_times.header_hash_scattered.trimmed_mean_us)
                 }
                 BlockVerifyType::AdsRootExpand => {
                     // Two-Layer：使用实测的两层式验证时间
                     (
-                        two_layer_breakdown.layer1_mmr_verify.mean_us,
-                        two_layer_breakdown.layer2_ads_root_expand.mean_us
+                        two_layer_breakdown.layer1_mmr_verify.trimmed_mean_us,
+                        two_layer_breakdown.layer2_ads_root_expand.trimmed_mean_us
                     )
                 }
                 BlockVerifyType::None => {
@@ -603,7 +685,7 @@ fn calculate_summary(results: &[ChainLengthResult], schemes: &[SchemeConfig]) ->
     // Two-Layer的额外开销分析
     let layer2_overheads: Vec<f64> = results
         .iter()
-        .map(|r| r.two_layer_breakdown.layer2_ads_root_expand.mean_us)
+        .map(|r| r.two_layer_breakdown.layer2_ads_root_expand.trimmed_mean_us)
         .collect();
     
     let layer2_percents: Vec<f64> = results
@@ -711,6 +793,8 @@ fn experiment2_verify_time() {
     println!("  总区块数: {}", raw_objs.len());
     println!("  测试点数: {}", chain_lengths.len());
     println!("  验证迭代次数: {}", VERIFY_ITERATIONS);
+    println!("  预热迭代次数: {}", WARMUP_ITERATIONS);
+    println!("  截断均值比例: 上下各{}%", TRIM_PERCENT);
 
     let param = make_test_param();
 
@@ -772,7 +856,7 @@ fn experiment2_verify_time() {
                                 current_length,
                                 test_height.0 as u64,
                                 &base_times,
-                                mmr_stats.mean_us,
+                                mmr_stats.trimmed_mean_us,
                                 &two_layer_breakdown,
                                 1.0,
                             );
@@ -786,17 +870,17 @@ fn experiment2_verify_time() {
                                     current_length,
                                     test_height.0 as u64,
                                     &base_times,
-                                    mmr_stats.mean_us,
+                                    mmr_stats.trimmed_mean_us,
                                     &two_layer_breakdown,
                                     header_chain_total,
                                 ))
                                 .collect();
 
                             println!("    log₂(n): {:.2}, MMR项数: {}", log2_n, mmr_items);
-                            println!("    Two-Layer: 第一层={:.2}μs, 第二层={:.3}μs, 总={:.2}μs",
-                                two_layer_breakdown.layer1_mmr_verify.mean_us,
-                                two_layer_breakdown.layer2_ads_root_expand.mean_us,
-                                two_layer_breakdown.total.mean_us
+                            println!("    Two-Layer: 第一层={:.2}μs, 第二层={:.3}μs, 总={:.2}μs (trimmed mean)",
+                                two_layer_breakdown.layer1_mmr_verify.trimmed_mean_us,
+                                two_layer_breakdown.layer2_ads_root_expand.trimmed_mean_us,
+                                two_layer_breakdown.total.trimmed_mean_us
                             );
 
                             results.push(ChainLengthResult {
@@ -831,12 +915,14 @@ fn experiment2_verify_time() {
     let output = ExperimentOutput {
         metadata: ExperimentMetadata {
             experiment_name: "experiment2_verify_time_comparison".to_string(),
-            description: "验证时间多方案对比实验（含两层式验证时间分解）".to_string(),
+            description: "验证时间多方案对比实验（含两层式验证时间分解，使用预热+截断均值）".to_string(),
             timestamp: get_timestamp(),
             dataset_path: DATASET_PATH.to_string(),
             key_path: KEY_PATH.to_string(),
             chain_lengths,
             verify_iterations: VERIFY_ITERATIONS,
+            warmup_iterations: WARMUP_ITERATIONS,
+            trim_percent: TRIM_PERCENT,
             hash_size: HASH_SIZE,
             scattered_block_header_size: SCATTERED_BLOCK_HEADER_SIZE,
             unified_block_header_size: UNIFIED_BLOCK_HEADER_SIZE,

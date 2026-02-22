@@ -1,2165 +1,2307 @@
 {
-  "metadata": {
-    "experiment_name": "experiment2_verify_time_comparison",
-    "description": "验证时间多方案对比实验（含两层式验证时间分解）",
-    "timestamp": 1769004347,
-    "dataset_path": "data/dataset/eth.dat",
-    "key_path": "output/pk_eth.key",
-    "chain_lengths": [
-      100,
-      200,
-      300,
-      400,
-      500,
-      750,
-      1000,
-      1500,
-      2000,
-      2500,
-      3000,
-      4000,
-      5000,
-      6000,
-      7000,
-      8000,
-      9000,
-      10000,
-      12000,
-      14000,
-      16000,
-      18000,
-      20000
+    "metadata": {
+        "experiment_name": "experiment2_verify_time_comparison",
+        "description": "验证时间多方案对比实验（含两层式验证时间分解，使用预热+截断均值）",
+        "timestamp": 1770106706,
+        "dataset_path": "data/dataset/eth.dat",
+        "key_path": "output/pk_eth.key",
+        "chain_lengths": [
+            100, 200, 300, 400, 500, 750, 1000, 1500, 2000, 2500, 3000, 4000,
+            5000, 6000, 7000, 8000, 9000, 10000, 12000, 14000, 16000, 18000,
+            20000
+        ],
+        "verify_iterations": 500,
+        "warmup_iterations": 50,
+        "trim_percent": 10.0,
+        "hash_size": 32,
+        "scattered_block_header_size": 164,
+        "unified_block_header_size": 100,
+        "schemes": [
+            {
+                "name": "HeaderChain",
+                "chain_proof_type": "HeaderChain",
+                "block_verify_type": "None",
+                "description": "区块头链同步验证（最原始方案）",
+                "block_header_size": 164,
+                "is_two_layer": false
+            },
+            {
+                "name": "Merkle",
+                "chain_proof_type": "Merkle",
+                "block_verify_type": "HeaderHash",
+                "description": "Merkle树证明验证（常见优化方案）",
+                "block_header_size": 164,
+                "is_two_layer": false
+            },
+            {
+                "name": "MMR-Scattered",
+                "chain_proof_type": "MMR",
+                "block_verify_type": "HeaderHash",
+                "description": "MMR验证 + 分散索引根（仅链级优化）",
+                "block_header_size": 164,
+                "is_two_layer": false
+            },
+            {
+                "name": "Two-Layer",
+                "chain_proof_type": "MMR",
+                "block_verify_type": "AdsRootExpand",
+                "description": "MMR验证 + BlockADSRoot展开验证（本文两层式方案）",
+                "block_header_size": 100,
+                "is_two_layer": true
+            }
+        ]
+    },
+    "results": [
+        {
+            "chain_length": 100,
+            "log2_n": 6.643856189774724,
+            "test_block_height": 50,
+            "actual_mmr_proof_items": 7,
+            "schemes": [
+                {
+                    "scheme_name": "HeaderChain",
+                    "chain_verify_time_us": 15.299999999999999,
+                    "block_verify_time_us": 0.0,
+                    "total_verify_time_us": 15.299999999999999,
+                    "speedup_vs_header_chain": 1.0
+                },
+                {
+                    "scheme_name": "Merkle",
+                    "chain_verify_time_us": 1.10775,
+                    "block_verify_time_us": 0.3,
+                    "total_verify_time_us": 1.40775,
+                    "speedup_vs_header_chain": 10.868407032498666
+                },
+                {
+                    "scheme_name": "MMR-Scattered",
+                    "chain_verify_time_us": 1.59725,
+                    "block_verify_time_us": 0.3,
+                    "total_verify_time_us": 1.89725,
+                    "speedup_vs_header_chain": 8.064303597311898
+                },
+                {
+                    "scheme_name": "Two-Layer",
+                    "chain_verify_time_us": 1.6,
+                    "block_verify_time_us": 0.18575,
+                    "total_verify_time_us": 1.7857500000000002,
+                    "speedup_vs_header_chain": 8.56782864342713
+                }
+            ],
+            "two_layer_breakdown": {
+                "layer1_mmr_verify": {
+                    "mean_us": 1.5996,
+                    "trimmed_mean_us": 1.6,
+                    "min_us": 1,
+                    "max_us": 1,
+                    "std_us": 0.03581068010551094
+                },
+                "layer2_ads_root_expand": {
+                    "mean_us": 0.17880000000000001,
+                    "trimmed_mean_us": 0.18575,
+                    "min_us": 0,
+                    "max_us": 0,
+                    "std_us": 0.04140033787243629
+                },
+                "total": {
+                    "mean_us": 1.8908,
+                    "trimmed_mean_us": 1.89575,
+                    "min_us": 1,
+                    "max_us": 2,
+                    "std_us": 0.04241412401348961
+                },
+                "layer2_overhead_percent": 9.798232889357774
+            },
+            "measured_base_times": {
+                "single_hash": {
+                    "mean_us": 0.1574,
+                    "trimmed_mean_us": 0.15825,
+                    "min_us": 0,
+                    "max_us": 0,
+                    "std_us": 0.05339421208115674
+                },
+                "header_hash_scattered": {
+                    "mean_us": 0.29419999999999996,
+                    "trimmed_mean_us": 0.3,
+                    "min_us": 0,
+                    "max_us": 0,
+                    "std_us": 0.02660405140391615
+                },
+                "header_hash_unified": {
+                    "mean_us": 0.1686,
+                    "trimmed_mean_us": 0.17325,
+                    "min_us": 0,
+                    "max_us": 0,
+                    "std_us": 0.04645811784206113
+                },
+                "ads_root_expand": {
+                    "mean_us": 0.15380000000000002,
+                    "trimmed_mean_us": 0.15475,
+                    "min_us": 0,
+                    "max_us": 0,
+                    "std_us": 0.049905321180855035
+                }
+            },
+            "mmr_verify_stats": {
+                "mean_us": 1.5944,
+                "trimmed_mean_us": 1.59725,
+                "min_us": 1,
+                "max_us": 2,
+                "std_us": 0.04746731815244225
+            }
+        },
+        {
+            "chain_length": 200,
+            "log2_n": 7.643856189774724,
+            "test_block_height": 100,
+            "actual_mmr_proof_items": 8,
+            "schemes": [
+                {
+                    "scheme_name": "HeaderChain",
+                    "chain_verify_time_us": 151.197,
+                    "block_verify_time_us": 0.0,
+                    "total_verify_time_us": 151.197,
+                    "speedup_vs_header_chain": 1.0
+                },
+                {
+                    "scheme_name": "Merkle",
+                    "chain_verify_time_us": 6.4,
+                    "block_verify_time_us": 1.497,
+                    "total_verify_time_us": 7.897,
+                    "speedup_vs_header_chain": 19.146131442319867
+                },
+                {
+                    "scheme_name": "MMR-Scattered",
+                    "chain_verify_time_us": 8.255,
+                    "block_verify_time_us": 1.497,
+                    "total_verify_time_us": 9.752,
+                    "speedup_vs_header_chain": 15.504204265791632
+                },
+                {
+                    "scheme_name": "Two-Layer",
+                    "chain_verify_time_us": 8.357,
+                    "block_verify_time_us": 0.88575,
+                    "total_verify_time_us": 9.24275,
+                    "speedup_vs_header_chain": 16.35844310405453
+                }
+            ],
+            "two_layer_breakdown": {
+                "layer1_mmr_verify": {
+                    "mean_us": 9.032200000000001,
+                    "trimmed_mean_us": 8.357,
+                    "min_us": 8,
+                    "max_us": 168,
+                    "std_us": 8.307373114054247
+                },
+                "layer2_ads_root_expand": {
+                    "mean_us": 0.8912,
+                    "trimmed_mean_us": 0.88575,
+                    "min_us": 0,
+                    "max_us": 1,
+                    "std_us": 0.07465726632304205
+                },
+                "total": {
+                    "mean_us": 10.336200000000002,
+                    "trimmed_mean_us": 9.65125,
+                    "min_us": 9,
+                    "max_us": 172,
+                    "std_us": 8.41326307392697
+                },
+                "layer2_overhead_percent": 9.177567672581272
+            },
+            "measured_base_times": {
+                "single_hash": {
+                    "mean_us": 0.8687999999999999,
+                    "trimmed_mean_us": 0.8,
+                    "min_us": 0,
+                    "max_us": 31,
+                    "std_us": 1.3915096687830377
+                },
+                "header_hash_scattered": {
+                    "mean_us": 1.8052000000000001,
+                    "trimmed_mean_us": 1.497,
+                    "min_us": 1,
+                    "max_us": 159,
+                    "std_us": 7.071029052671762
+                },
+                "header_hash_unified": {
+                    "mean_us": 0.8136,
+                    "trimmed_mean_us": 0.804,
+                    "min_us": 0,
+                    "max_us": 1,
+                    "std_us": 0.03546202349303329
+                },
+                "ads_root_expand": {
+                    "mean_us": 0.8208,
+                    "trimmed_mean_us": 0.81325,
+                    "min_us": 0,
+                    "max_us": 1,
+                    "std_us": 0.041118626958666075
+                }
+            },
+            "mmr_verify_stats": {
+                "mean_us": 12.2232,
+                "trimmed_mean_us": 8.255,
+                "min_us": 5,
+                "max_us": 729,
+                "std_us": 38.6134907136117
+            }
+        },
+        {
+            "chain_length": 300,
+            "log2_n": 8.228818690495881,
+            "test_block_height": 150,
+            "actual_mmr_proof_items": 9,
+            "schemes": [
+                {
+                    "scheme_name": "HeaderChain",
+                    "chain_verify_time_us": 161.268,
+                    "block_verify_time_us": 0.0,
+                    "total_verify_time_us": 161.268,
+                    "speedup_vs_header_chain": 1.0
+                },
+                {
+                    "scheme_name": "Merkle",
+                    "chain_verify_time_us": 5.8477500000000004,
+                    "block_verify_time_us": 1.068,
+                    "total_verify_time_us": 6.915750000000001,
+                    "speedup_vs_header_chain": 23.318945884394314
+                },
+                {
+                    "scheme_name": "MMR-Scattered",
+                    "chain_verify_time_us": 9.034,
+                    "block_verify_time_us": 1.068,
+                    "total_verify_time_us": 10.102,
+                    "speedup_vs_header_chain": 15.963967531181943
+                },
+                {
+                    "scheme_name": "Two-Layer",
+                    "chain_verify_time_us": 9.033,
+                    "block_verify_time_us": 0.8705,
+                    "total_verify_time_us": 9.9035,
+                    "speedup_vs_header_chain": 16.283940021204625
+                }
+            ],
+            "two_layer_breakdown": {
+                "layer1_mmr_verify": {
+                    "mean_us": 9.0266,
+                    "trimmed_mean_us": 9.033,
+                    "min_us": 7,
+                    "max_us": 22,
+                    "std_us": 1.0652050335625791
+                },
+                "layer2_ads_root_expand": {
+                    "mean_us": 0.8622000000000001,
+                    "trimmed_mean_us": 0.8705,
+                    "min_us": 0,
+                    "max_us": 1,
+                    "std_us": 0.06292120593498364
+                },
+                "total": {
+                    "mean_us": 10.2936,
+                    "trimmed_mean_us": 10.31,
+                    "min_us": 8,
+                    "max_us": 23,
+                    "std_us": 1.089372528114243
+                },
+                "layer2_overhead_percent": 8.44325897187197
+            },
+            "measured_base_times": {
+                "single_hash": {
+                    "mean_us": 0.6346,
+                    "trimmed_mean_us": 0.64975,
+                    "min_us": 0,
+                    "max_us": 1,
+                    "std_us": 0.19743556316734467
+                },
+                "header_hash_scattered": {
+                    "mean_us": 1.0956,
+                    "trimmed_mean_us": 1.068,
+                    "min_us": 0,
+                    "max_us": 1,
+                    "std_us": 0.2684114927847118
+                },
+                "header_hash_unified": {
+                    "mean_us": 0.528,
+                    "trimmed_mean_us": 0.50075,
+                    "min_us": 0,
+                    "max_us": 0,
+                    "std_us": 0.0946250908355245
+                },
+                "ads_root_expand": {
+                    "mean_us": 0.7787999999999999,
+                    "trimmed_mean_us": 0.672,
+                    "min_us": 0,
+                    "max_us": 50,
+                    "std_us": 2.2300171553210246
+                }
+            },
+            "mmr_verify_stats": {
+                "mean_us": 8.7838,
+                "trimmed_mean_us": 9.034,
+                "min_us": 3,
+                "max_us": 28,
+                "std_us": 1.6302124847672514
+            }
+        },
+        {
+            "chain_length": 400,
+            "log2_n": 8.643856189774725,
+            "test_block_height": 200,
+            "actual_mmr_proof_items": 9,
+            "schemes": [
+                {
+                    "scheme_name": "HeaderChain",
+                    "chain_verify_time_us": 302.05275,
+                    "block_verify_time_us": 0.0,
+                    "total_verify_time_us": 302.05275,
+                    "speedup_vs_header_chain": 1.0
+                },
+                {
+                    "scheme_name": "Merkle",
+                    "chain_verify_time_us": 7.2,
+                    "block_verify_time_us": 1.50275,
+                    "total_verify_time_us": 8.70275,
+                    "speedup_vs_header_chain": 34.707736060440666
+                },
+                {
+                    "scheme_name": "MMR-Scattered",
+                    "chain_verify_time_us": 9.17175,
+                    "block_verify_time_us": 1.50275,
+                    "total_verify_time_us": 10.6745,
+                    "speedup_vs_header_chain": 28.29666494917795
+                },
+                {
+                    "scheme_name": "Two-Layer",
+                    "chain_verify_time_us": 9.13525,
+                    "block_verify_time_us": 0.87275,
+                    "total_verify_time_us": 10.008,
+                    "speedup_vs_header_chain": 30.181130095923265
+                }
+            ],
+            "two_layer_breakdown": {
+                "layer1_mmr_verify": {
+                    "mean_us": 11.401200000000001,
+                    "trimmed_mean_us": 9.13525,
+                    "min_us": 3,
+                    "max_us": 269,
+                    "std_us": 18.733566975438734
+                },
+                "layer2_ads_root_expand": {
+                    "mean_us": 0.8822000000000001,
+                    "trimmed_mean_us": 0.87275,
+                    "min_us": 0,
+                    "max_us": 19,
+                    "std_us": 0.8245379832194023
+                },
+                "total": {
+                    "mean_us": 12.6846,
+                    "trimmed_mean_us": 10.4105,
+                    "min_us": 4,
+                    "max_us": 271,
+                    "std_us": 18.85168945294995
+                },
+                "layer2_overhead_percent": 8.383362950866912
+            },
+            "measured_base_times": {
+                "single_hash": {
+                    "mean_us": 0.804,
+                    "trimmed_mean_us": 0.8,
+                    "min_us": 0,
+                    "max_us": 1,
+                    "std_us": 0.031400190188719805
+                },
+                "header_hash_scattered": {
+                    "mean_us": 1.5652000000000001,
+                    "trimmed_mean_us": 1.50275,
+                    "min_us": 1,
+                    "max_us": 27,
+                    "std_us": 1.1594643915837497
+                },
+                "header_hash_unified": {
+                    "mean_us": 0.8677999999999999,
+                    "trimmed_mean_us": 0.81125,
+                    "min_us": 0,
+                    "max_us": 24,
+                    "std_us": 1.0689942269791068
+                },
+                "ads_root_expand": {
+                    "mean_us": 0.8276,
+                    "trimmed_mean_us": 0.82,
+                    "min_us": 0,
+                    "max_us": 1,
+                    "std_us": 0.05218895836045692
+                }
+            },
+            "mmr_verify_stats": {
+                "mean_us": 10.2146,
+                "trimmed_mean_us": 9.17175,
+                "min_us": 9,
+                "max_us": 292,
+                "std_us": 14.264633411789708
+            }
+        },
+        {
+            "chain_length": 500,
+            "log2_n": 8.965784284662087,
+            "test_block_height": 250,
+            "actual_mmr_proof_items": 9,
+            "schemes": [
+                {
+                    "scheme_name": "HeaderChain",
+                    "chain_verify_time_us": 376.5,
+                    "block_verify_time_us": 0.0,
+                    "total_verify_time_us": 376.5,
+                    "speedup_vs_header_chain": 1.0
+                },
+                {
+                    "scheme_name": "Merkle",
+                    "chain_verify_time_us": 7.2,
+                    "block_verify_time_us": 1.5,
+                    "total_verify_time_us": 8.7,
+                    "speedup_vs_header_chain": 43.27586206896552
+                },
+                {
+                    "scheme_name": "MMR-Scattered",
+                    "chain_verify_time_us": 9.31075,
+                    "block_verify_time_us": 1.5,
+                    "total_verify_time_us": 10.81075,
+                    "speedup_vs_header_chain": 34.82644589875818
+                },
+                {
+                    "scheme_name": "Two-Layer",
+                    "chain_verify_time_us": 9.5875,
+                    "block_verify_time_us": 0.9,
+                    "total_verify_time_us": 10.4875,
+                    "speedup_vs_header_chain": 35.899880810488675
+                }
+            ],
+            "two_layer_breakdown": {
+                "layer1_mmr_verify": {
+                    "mean_us": 9.943200000000001,
+                    "trimmed_mean_us": 9.5875,
+                    "min_us": 9,
+                    "max_us": 37,
+                    "std_us": 1.8245744445781384
+                },
+                "layer2_ads_root_expand": {
+                    "mean_us": 0.9132,
+                    "trimmed_mean_us": 0.9,
+                    "min_us": 0,
+                    "max_us": 4,
+                    "std_us": 0.14473304843960608
+                },
+                "total": {
+                    "mean_us": 11.283,
+                    "trimmed_mean_us": 10.91475,
+                    "min_us": 10,
+                    "max_us": 38,
+                    "std_us": 1.83698667389836
+                },
+                "layer2_overhead_percent": 8.245722531436819
+            },
+            "measured_base_times": {
+                "single_hash": {
+                    "mean_us": 0.8176,
+                    "trimmed_mean_us": 0.8,
+                    "min_us": 0,
+                    "max_us": 5,
+                    "std_us": 0.22178506990884334
+                },
+                "header_hash_scattered": {
+                    "mean_us": 1.6856,
+                    "trimmed_mean_us": 1.5,
+                    "min_us": 1,
+                    "max_us": 44,
+                    "std_us": 2.5479672120786323
+                },
+                "header_hash_unified": {
+                    "mean_us": 0.8294,
+                    "trimmed_mean_us": 0.80975,
+                    "min_us": 0,
+                    "max_us": 3,
+                    "std_us": 0.19222262894403472
+                },
+                "ads_root_expand": {
+                    "mean_us": 0.8438,
+                    "trimmed_mean_us": 0.81625,
+                    "min_us": 0,
+                    "max_us": 4,
+                    "std_us": 0.2632872963148829
+                }
+            },
+            "mmr_verify_stats": {
+                "mean_us": 10.619,
+                "trimmed_mean_us": 9.31075,
+                "min_us": 8,
+                "max_us": 110,
+                "std_us": 8.251632437024295
+            }
+        },
+        {
+            "chain_length": 750,
+            "log2_n": 9.550746785383243,
+            "test_block_height": 375,
+            "actual_mmr_proof_items": 10,
+            "schemes": [
+                {
+                    "scheme_name": "HeaderChain",
+                    "chain_verify_time_us": 564.0,
+                    "block_verify_time_us": 0.0,
+                    "total_verify_time_us": 564.0,
+                    "speedup_vs_header_chain": 1.0
+                },
+                {
+                    "scheme_name": "Merkle",
+                    "chain_verify_time_us": 8.0,
+                    "block_verify_time_us": 1.5,
+                    "total_verify_time_us": 9.5,
+                    "speedup_vs_header_chain": 59.36842105263158
+                },
+                {
+                    "scheme_name": "MMR-Scattered",
+                    "chain_verify_time_us": 9.84225,
+                    "block_verify_time_us": 1.5,
+                    "total_verify_time_us": 11.34225,
+                    "speedup_vs_header_chain": 49.725583548237786
+                },
+                {
+                    "scheme_name": "Two-Layer",
+                    "chain_verify_time_us": 9.72775,
+                    "block_verify_time_us": 0.8495,
+                    "total_verify_time_us": 10.577250000000001,
+                    "speedup_vs_header_chain": 53.32198822945472
+                }
+            ],
+            "two_layer_breakdown": {
+                "layer1_mmr_verify": {
+                    "mean_us": 9.3964,
+                    "trimmed_mean_us": 9.72775,
+                    "min_us": 4,
+                    "max_us": 27,
+                    "std_us": 1.8885656993606634
+                },
+                "layer2_ads_root_expand": {
+                    "mean_us": 0.8568,
+                    "trimmed_mean_us": 0.8495,
+                    "min_us": 0,
+                    "max_us": 21,
+                    "std_us": 0.9266991435224374
+                },
+                "total": {
+                    "mean_us": 10.636,
+                    "trimmed_mean_us": 10.98,
+                    "min_us": 4,
+                    "max_us": 31,
+                    "std_us": 2.2528770294491527
+                },
+                "layer2_overhead_percent": 7.736794171220401
+            },
+            "measured_base_times": {
+                "single_hash": {
+                    "mean_us": 0.8094,
+                    "trimmed_mean_us": 0.8,
+                    "min_us": 0,
+                    "max_us": 1,
+                    "std_us": 0.03968361852399937
+                },
+                "header_hash_scattered": {
+                    "mean_us": 1.5562,
+                    "trimmed_mean_us": 1.5,
+                    "min_us": 1,
+                    "max_us": 32,
+                    "std_us": 1.3824775036492256
+                },
+                "header_hash_unified": {
+                    "mean_us": 0.8174,
+                    "trimmed_mean_us": 0.80925,
+                    "min_us": 0,
+                    "max_us": 0,
+                    "std_us": 0.037948916196394455
+                },
+                "ads_root_expand": {
+                    "mean_us": 1.377,
+                    "trimmed_mean_us": 0.822,
+                    "min_us": 0,
+                    "max_us": 270,
+                    "std_us": 12.060279918119928
+                }
+            },
+            "mmr_verify_stats": {
+                "mean_us": 10.255,
+                "trimmed_mean_us": 9.84225,
+                "min_us": 4,
+                "max_us": 127,
+                "std_us": 6.043041593718085
+            }
+        },
+        {
+            "chain_length": 1000,
+            "log2_n": 9.965784284662087,
+            "test_block_height": 500,
+            "actual_mmr_proof_items": 10,
+            "schemes": [
+                {
+                    "scheme_name": "HeaderChain",
+                    "chain_verify_time_us": 150.29999999999998,
+                    "block_verify_time_us": 0.0,
+                    "total_verify_time_us": 150.29999999999998,
+                    "speedup_vs_header_chain": 1.0
+                },
+                {
+                    "scheme_name": "Merkle",
+                    "chain_verify_time_us": 1.585,
+                    "block_verify_time_us": 0.3,
+                    "total_verify_time_us": 1.885,
+                    "speedup_vs_header_chain": 79.73474801061008
+                },
+                {
+                    "scheme_name": "MMR-Scattered",
+                    "chain_verify_time_us": 2.12975,
+                    "block_verify_time_us": 0.3,
+                    "total_verify_time_us": 2.42975,
+                    "speedup_vs_header_chain": 61.85821586582981
+                },
+                {
+                    "scheme_name": "Two-Layer",
+                    "chain_verify_time_us": 2.127,
+                    "block_verify_time_us": 0.2,
+                    "total_verify_time_us": 2.327,
+                    "speedup_vs_header_chain": 64.58960034379028
+                }
+            ],
+            "two_layer_breakdown": {
+                "layer1_mmr_verify": {
+                    "mean_us": 2.1358,
+                    "trimmed_mean_us": 2.127,
+                    "min_us": 2,
+                    "max_us": 2,
+                    "std_us": 0.06345402135130015
+                },
+                "layer2_ads_root_expand": {
+                    "mean_us": 0.19140000000000001,
+                    "trimmed_mean_us": 0.2,
+                    "min_us": 0,
+                    "max_us": 0,
+                    "std_us": 0.03013064405921076
+                },
+                "total": {
+                    "mean_us": 2.4476,
+                    "trimmed_mean_us": 2.44075,
+                    "min_us": 2,
+                    "max_us": 3,
+                    "std_us": 0.06887472290259897
+                },
+                "layer2_overhead_percent": 8.194202601659327
+            },
+            "measured_base_times": {
+                "single_hash": {
+                    "mean_us": 0.158,
+                    "trimmed_mean_us": 0.1585,
+                    "min_us": 0,
+                    "max_us": 0,
+                    "std_us": 0.05729367443497163
+                },
+                "header_hash_scattered": {
+                    "mean_us": 0.29760000000000003,
+                    "trimmed_mean_us": 0.3,
+                    "min_us": 0,
+                    "max_us": 0,
+                    "std_us": 0.018840114113231936
+                },
+                "header_hash_unified": {
+                    "mean_us": 0.1676,
+                    "trimmed_mean_us": 0.172,
+                    "min_us": 0,
+                    "max_us": 0,
+                    "std_us": 0.04684687031720519
+                },
+                "ads_root_expand": {
+                    "mean_us": 0.1668,
+                    "trimmed_mean_us": 0.171,
+                    "min_us": 0,
+                    "max_us": 0,
+                    "std_us": 0.04714026313903675
+                }
+            },
+            "mmr_verify_stats": {
+                "mean_us": 2.1828000000000003,
+                "trimmed_mean_us": 2.12975,
+                "min_us": 2,
+                "max_us": 25,
+                "std_us": 1.034681250715002
+            }
+        },
+        {
+            "chain_length": 1500,
+            "log2_n": 10.550746785383243,
+            "test_block_height": 750,
+            "actual_mmr_proof_items": 11,
+            "schemes": [
+                {
+                    "scheme_name": "HeaderChain",
+                    "chain_verify_time_us": 225.29999999999998,
+                    "block_verify_time_us": 0.0,
+                    "total_verify_time_us": 225.29999999999998,
+                    "speedup_vs_header_chain": 1.0
+                },
+                {
+                    "scheme_name": "Merkle",
+                    "chain_verify_time_us": 1.75175,
+                    "block_verify_time_us": 0.3,
+                    "total_verify_time_us": 2.0517499999999997,
+                    "speedup_vs_header_chain": 109.80869989033752
+                },
+                {
+                    "scheme_name": "MMR-Scattered",
+                    "chain_verify_time_us": 2.31025,
+                    "block_verify_time_us": 0.3,
+                    "total_verify_time_us": 2.6102499999999997,
+                    "speedup_vs_header_chain": 86.31357149698304
+                },
+                {
+                    "scheme_name": "Two-Layer",
+                    "chain_verify_time_us": 2.30125,
+                    "block_verify_time_us": 0.2,
+                    "total_verify_time_us": 2.50125,
+                    "speedup_vs_header_chain": 90.07496251874062
+                }
+            ],
+            "two_layer_breakdown": {
+                "layer1_mmr_verify": {
+                    "mean_us": 2.3242,
+                    "trimmed_mean_us": 2.30125,
+                    "min_us": 2,
+                    "max_us": 10,
+                    "std_us": 0.35019942786726155
+                },
+                "layer2_ads_root_expand": {
+                    "mean_us": 0.1966,
+                    "trimmed_mean_us": 0.2,
+                    "min_us": 0,
+                    "max_us": 0,
+                    "std_us": 0.02301084522558852
+                },
+                "total": {
+                    "mean_us": 2.6342,
+                    "trimmed_mean_us": 2.613,
+                    "min_us": 2,
+                    "max_us": 10,
+                    "std_us": 0.3507369281749091
+                },
+                "layer2_overhead_percent": 7.6540375047837745
+            },
+            "measured_base_times": {
+                "single_hash": {
+                    "mean_us": 0.1584,
+                    "trimmed_mean_us": 0.15925,
+                    "min_us": 0,
+                    "max_us": 0,
+                    "std_us": 0.05362080175418457
+                },
+                "header_hash_scattered": {
+                    "mean_us": 0.2994,
+                    "trimmed_mean_us": 0.3,
+                    "min_us": 0,
+                    "max_us": 0,
+                    "std_us": 0.031330547496218754
+                },
+                "header_hash_unified": {
+                    "mean_us": 0.195,
+                    "trimmed_mean_us": 0.17125,
+                    "min_us": 0,
+                    "max_us": 13,
+                    "std_us": 0.6161121556800787
+                },
+                "ads_root_expand": {
+                    "mean_us": 0.1716,
+                    "trimmed_mean_us": 0.177,
+                    "min_us": 0,
+                    "max_us": 0,
+                    "std_us": 0.04513884170047059
+                }
+            },
+            "mmr_verify_stats": {
+                "mean_us": 2.4774000000000003,
+                "trimmed_mean_us": 2.31025,
+                "min_us": 2,
+                "max_us": 41,
+                "std_us": 2.04202079761097
+            }
+        },
+        {
+            "chain_length": 2000,
+            "log2_n": 10.965784284662087,
+            "test_block_height": 1000,
+            "actual_mmr_proof_items": 11,
+            "schemes": [
+                {
+                    "scheme_name": "HeaderChain",
+                    "chain_verify_time_us": 300.3,
+                    "block_verify_time_us": 0.0,
+                    "total_verify_time_us": 300.3,
+                    "speedup_vs_header_chain": 1.0
+                },
+                {
+                    "scheme_name": "Merkle",
+                    "chain_verify_time_us": 1.7737500000000002,
+                    "block_verify_time_us": 0.3,
+                    "total_verify_time_us": 2.07375,
+                    "speedup_vs_header_chain": 144.81012658227849
+                },
+                {
+                    "scheme_name": "MMR-Scattered",
+                    "chain_verify_time_us": 2.311,
+                    "block_verify_time_us": 0.3,
+                    "total_verify_time_us": 2.6109999999999998,
+                    "speedup_vs_header_chain": 115.01340482573728
+                },
+                {
+                    "scheme_name": "Two-Layer",
+                    "chain_verify_time_us": 2.3,
+                    "block_verify_time_us": 0.19325,
+                    "total_verify_time_us": 2.4932499999999997,
+                    "speedup_vs_header_chain": 120.44520204552293
+                }
+            ],
+            "two_layer_breakdown": {
+                "layer1_mmr_verify": {
+                    "mean_us": 2.303,
+                    "trimmed_mean_us": 2.3,
+                    "min_us": 2,
+                    "max_us": 2,
+                    "std_us": 0.04067319285763621
+                },
+                "layer2_ads_root_expand": {
+                    "mean_us": 0.1992,
+                    "trimmed_mean_us": 0.19325,
+                    "min_us": 0,
+                    "max_us": 7,
+                    "std_us": 0.32473105875638447
+                },
+                "total": {
+                    "mean_us": 2.6188000000000002,
+                    "trimmed_mean_us": 2.6,
+                    "min_us": 2,
+                    "max_us": 9,
+                    "std_us": 0.3244334664431141
+                },
+                "layer2_overhead_percent": 7.432692307692308
+            },
+            "measured_base_times": {
+                "single_hash": {
+                    "mean_us": 0.15919999999999998,
+                    "trimmed_mean_us": 0.16125,
+                    "min_us": 0,
+                    "max_us": 0,
+                    "std_us": 0.049601215319004424
+                },
+                "header_hash_scattered": {
+                    "mean_us": 0.29619999999999996,
+                    "trimmed_mean_us": 0.3,
+                    "min_us": 0,
+                    "max_us": 0,
+                    "std_us": 0.020158689081658656
+                },
+                "header_hash_unified": {
+                    "mean_us": 0.171,
+                    "trimmed_mean_us": 0.17625,
+                    "min_us": 0,
+                    "max_us": 0,
+                    "std_us": 0.04542164960131908
+                },
+                "ads_root_expand": {
+                    "mean_us": 0.1606,
+                    "trimmed_mean_us": 0.163,
+                    "min_us": 0,
+                    "max_us": 0,
+                    "std_us": 0.049320431973169564
+                }
+            },
+            "mmr_verify_stats": {
+                "mean_us": 2.3824,
+                "trimmed_mean_us": 2.311,
+                "min_us": 2,
+                "max_us": 24,
+                "std_us": 1.0108877425590395
+            }
+        },
+        {
+            "chain_length": 2500,
+            "log2_n": 11.287712379549449,
+            "test_block_height": 1250,
+            "actual_mmr_proof_items": 12,
+            "schemes": [
+                {
+                    "scheme_name": "HeaderChain",
+                    "chain_verify_time_us": 375.3,
+                    "block_verify_time_us": 0.0,
+                    "total_verify_time_us": 375.3,
+                    "speedup_vs_header_chain": 1.0
+                },
+                {
+                    "scheme_name": "Merkle",
+                    "chain_verify_time_us": 2.0220000000000002,
+                    "block_verify_time_us": 0.3,
+                    "total_verify_time_us": 2.322,
+                    "speedup_vs_header_chain": 161.62790697674419
+                },
+                {
+                    "scheme_name": "MMR-Scattered",
+                    "chain_verify_time_us": 2.48075,
+                    "block_verify_time_us": 0.3,
+                    "total_verify_time_us": 2.78075,
+                    "speedup_vs_header_chain": 134.96358895981302
+                },
+                {
+                    "scheme_name": "Two-Layer",
+                    "chain_verify_time_us": 2.48325,
+                    "block_verify_time_us": 0.2,
+                    "total_verify_time_us": 2.68325,
+                    "speedup_vs_header_chain": 139.86769775458865
+                }
+            ],
+            "two_layer_breakdown": {
+                "layer1_mmr_verify": {
+                    "mean_us": 2.49,
+                    "trimmed_mean_us": 2.48325,
+                    "min_us": 2,
+                    "max_us": 8,
+                    "std_us": 0.25991365916480974
+                },
+                "layer2_ads_root_expand": {
+                    "mean_us": 0.1956,
+                    "trimmed_mean_us": 0.2,
+                    "min_us": 0,
+                    "max_us": 0,
+                    "std_us": 0.0214840202534931
+                },
+                "total": {
+                    "mean_us": 2.8024,
+                    "trimmed_mean_us": 2.79425,
+                    "min_us": 2,
+                    "max_us": 8,
+                    "std_us": 0.2636916885554519
+                },
+                "layer2_overhead_percent": 7.15755569473025
+            },
+            "measured_base_times": {
+                "single_hash": {
+                    "mean_us": 0.18780000000000002,
+                    "trimmed_mean_us": 0.1685,
+                    "min_us": 0,
+                    "max_us": 11,
+                    "std_us": 0.5003717655979572
+                },
+                "header_hash_scattered": {
+                    "mean_us": 0.3836,
+                    "trimmed_mean_us": 0.3,
+                    "min_us": 0,
+                    "max_us": 14,
+                    "std_us": 0.9454940284929478
+                },
+                "header_hash_unified": {
+                    "mean_us": 0.1856,
+                    "trimmed_mean_us": 0.17475,
+                    "min_us": 0,
+                    "max_us": 8,
+                    "std_us": 0.3576149001840765
+                },
+                "ads_root_expand": {
+                    "mean_us": 0.165,
+                    "trimmed_mean_us": 0.16875,
+                    "min_us": 0,
+                    "max_us": 0,
+                    "std_us": 0.04774472869580968
+                }
+            },
+            "mmr_verify_stats": {
+                "mean_us": 2.4784,
+                "trimmed_mean_us": 2.48075,
+                "min_us": 2,
+                "max_us": 2,
+                "std_us": 0.04998436629334708
+            }
+        },
+        {
+            "chain_length": 3000,
+            "log2_n": 11.550746785383243,
+            "test_block_height": 1500,
+            "actual_mmr_proof_items": 12,
+            "schemes": [
+                {
+                    "scheme_name": "HeaderChain",
+                    "chain_verify_time_us": 450.3,
+                    "block_verify_time_us": 0.0,
+                    "total_verify_time_us": 450.3,
+                    "speedup_vs_header_chain": 1.0
+                },
+                {
+                    "scheme_name": "Merkle",
+                    "chain_verify_time_us": 1.908,
+                    "block_verify_time_us": 0.3,
+                    "total_verify_time_us": 2.2079999999999997,
+                    "speedup_vs_header_chain": 203.94021739130437
+                },
+                {
+                    "scheme_name": "MMR-Scattered",
+                    "chain_verify_time_us": 2.49775,
+                    "block_verify_time_us": 0.3,
+                    "total_verify_time_us": 2.7977499999999997,
+                    "speedup_vs_header_chain": 160.9507640067912
+                },
+                {
+                    "scheme_name": "Two-Layer",
+                    "chain_verify_time_us": 2.56425,
+                    "block_verify_time_us": 0.2,
+                    "total_verify_time_us": 2.76425,
+                    "speedup_vs_header_chain": 162.901329474541
+                }
+            ],
+            "two_layer_breakdown": {
+                "layer1_mmr_verify": {
+                    "mean_us": 2.6334,
+                    "trimmed_mean_us": 2.56425,
+                    "min_us": 2,
+                    "max_us": 15,
+                    "std_us": 0.6202207571301934
+                },
+                "layer2_ads_root_expand": {
+                    "mean_us": 0.2122,
+                    "trimmed_mean_us": 0.2,
+                    "min_us": 0,
+                    "max_us": 2,
+                    "std_us": 0.12141104267143492
+                },
+                "total": {
+                    "mean_us": 2.9658,
+                    "trimmed_mean_us": 2.89125,
+                    "min_us": 2,
+                    "max_us": 15,
+                    "std_us": 0.6271179425177159
+                },
+                "layer2_overhead_percent": 6.9174232598357115
+            },
+            "measured_base_times": {
+                "single_hash": {
+                    "mean_us": 0.15780000000000002,
+                    "trimmed_mean_us": 0.159,
+                    "min_us": 0,
+                    "max_us": 0,
+                    "std_us": 0.051812441151872425
+                },
+                "header_hash_scattered": {
+                    "mean_us": 0.2978,
+                    "trimmed_mean_us": 0.3,
+                    "min_us": 0,
+                    "max_us": 0,
+                    "std_us": 0.015989726160424635
+                },
+                "header_hash_unified": {
+                    "mean_us": 0.1706,
+                    "trimmed_mean_us": 0.17575,
+                    "min_us": 0,
+                    "max_us": 0,
+                    "std_us": 0.04560481991191704
+                },
+                "ads_root_expand": {
+                    "mean_us": 0.1628,
+                    "trimmed_mean_us": 0.16225,
+                    "min_us": 0,
+                    "max_us": 1,
+                    "std_us": 0.08456039807051276
+                }
+            },
+            "mmr_verify_stats": {
+                "mean_us": 2.8556,
+                "trimmed_mean_us": 2.49775,
+                "min_us": 2,
+                "max_us": 121,
+                "std_us": 5.452475365852704
+            }
+        },
+        {
+            "chain_length": 4000,
+            "log2_n": 11.965784284662087,
+            "test_block_height": 2000,
+            "actual_mmr_proof_items": 12,
+            "schemes": [
+                {
+                    "scheme_name": "HeaderChain",
+                    "chain_verify_time_us": 600.3,
+                    "block_verify_time_us": 0.0,
+                    "total_verify_time_us": 600.3,
+                    "speedup_vs_header_chain": 1.0
+                },
+                {
+                    "scheme_name": "Merkle",
+                    "chain_verify_time_us": 1.911,
+                    "block_verify_time_us": 0.3,
+                    "total_verify_time_us": 2.211,
+                    "speedup_vs_header_chain": 271.50610583446405
+                },
+                {
+                    "scheme_name": "MMR-Scattered",
+                    "chain_verify_time_us": 2.5015,
+                    "block_verify_time_us": 0.3,
+                    "total_verify_time_us": 2.8015,
+                    "speedup_vs_header_chain": 214.27806532214885
+                },
+                {
+                    "scheme_name": "Two-Layer",
+                    "chain_verify_time_us": 2.50025,
+                    "block_verify_time_us": 0.2,
+                    "total_verify_time_us": 2.70025,
+                    "speedup_vs_header_chain": 222.31274881955372
+                }
+            ],
+            "two_layer_breakdown": {
+                "layer1_mmr_verify": {
+                    "mean_us": 2.5196,
+                    "trimmed_mean_us": 2.50025,
+                    "min_us": 2,
+                    "max_us": 11,
+                    "std_us": 0.4202964885370239
+                },
+                "layer2_ads_root_expand": {
+                    "mean_us": 0.1958,
+                    "trimmed_mean_us": 0.2,
+                    "min_us": 0,
+                    "max_us": 0,
+                    "std_us": 0.02287808588206764
+                },
+                "total": {
+                    "mean_us": 2.8312,
+                    "trimmed_mean_us": 2.81475,
+                    "min_us": 2,
+                    "max_us": 12,
+                    "std_us": 0.4154175049354724
+                },
+                "layer2_overhead_percent": 7.105426769695356
+            },
+            "measured_base_times": {
+                "single_hash": {
+                    "mean_us": 0.1576,
+                    "trimmed_mean_us": 0.15925,
+                    "min_us": 0,
+                    "max_us": 0,
+                    "std_us": 0.04987198039839327
+                },
+                "header_hash_scattered": {
+                    "mean_us": 0.3162,
+                    "trimmed_mean_us": 0.3,
+                    "min_us": 0,
+                    "max_us": 9,
+                    "std_us": 0.4074427311393765
+                },
+                "header_hash_unified": {
+                    "mean_us": 0.169,
+                    "trimmed_mean_us": 0.17325,
+                    "min_us": 0,
+                    "max_us": 0,
+                    "std_us": 0.04715343989347516
+                },
+                "ads_root_expand": {
+                    "mean_us": 0.179,
+                    "trimmed_mean_us": 0.18625,
+                    "min_us": 0,
+                    "max_us": 0,
+                    "std_us": 0.04077161573078258
+                }
+            },
+            "mmr_verify_stats": {
+                "mean_us": 2.7268000000000003,
+                "trimmed_mean_us": 2.5015,
+                "min_us": 2,
+                "max_us": 110,
+                "std_us": 4.81340414664693
+            }
+        },
+        {
+            "chain_length": 5000,
+            "log2_n": 12.287712379549449,
+            "test_block_height": 2500,
+            "actual_mmr_proof_items": 13,
+            "schemes": [
+                {
+                    "scheme_name": "HeaderChain",
+                    "chain_verify_time_us": 750.3,
+                    "block_verify_time_us": 0.0,
+                    "total_verify_time_us": 750.3,
+                    "speedup_vs_header_chain": 1.0
+                },
+                {
+                    "scheme_name": "Merkle",
+                    "chain_verify_time_us": 2.0995,
+                    "block_verify_time_us": 0.3,
+                    "total_verify_time_us": 2.3994999999999997,
+                    "speedup_vs_header_chain": 312.69014377995416
+                },
+                {
+                    "scheme_name": "MMR-Scattered",
+                    "chain_verify_time_us": 2.6645,
+                    "block_verify_time_us": 0.3,
+                    "total_verify_time_us": 2.9644999999999997,
+                    "speedup_vs_header_chain": 253.0949569910609
+                },
+                {
+                    "scheme_name": "Two-Layer",
+                    "chain_verify_time_us": 2.66125,
+                    "block_verify_time_us": 0.2,
+                    "total_verify_time_us": 2.86125,
+                    "speedup_vs_header_chain": 262.2280471821756
+                }
+            ],
+            "two_layer_breakdown": {
+                "layer1_mmr_verify": {
+                    "mean_us": 2.6604,
+                    "trimmed_mean_us": 2.66125,
+                    "min_us": 2,
+                    "max_us": 3,
+                    "std_us": 0.05725728594325065
+                },
+                "layer2_ads_root_expand": {
+                    "mean_us": 0.2176,
+                    "trimmed_mean_us": 0.2,
+                    "min_us": 0,
+                    "max_us": 11,
+                    "std_us": 0.5150736274391923
+                },
+                "total": {
+                    "mean_us": 2.9968000000000004,
+                    "trimmed_mean_us": 2.97675,
+                    "min_us": 2,
+                    "max_us": 14,
+                    "std_us": 0.5228541986309895
+                },
+                "layer2_overhead_percent": 6.718736877467037
+            },
+            "measured_base_times": {
+                "single_hash": {
+                    "mean_us": 0.1596,
+                    "trimmed_mean_us": 0.1615,
+                    "min_us": 0,
+                    "max_us": 0,
+                    "std_us": 0.04992820496775945
+                },
+                "header_hash_scattered": {
+                    "mean_us": 0.2964,
+                    "trimmed_mean_us": 0.3,
+                    "min_us": 0,
+                    "max_us": 0,
+                    "std_us": 0.025852983454661842
+                },
+                "header_hash_unified": {
+                    "mean_us": 0.1674,
+                    "trimmed_mean_us": 0.17175,
+                    "min_us": 0,
+                    "max_us": 0,
+                    "std_us": 0.04692167182201796
+                },
+                "ads_root_expand": {
+                    "mean_us": 0.16019999999999998,
+                    "trimmed_mean_us": 0.1625,
+                    "min_us": 0,
+                    "max_us": 0,
+                    "std_us": 0.049404875097167816
+                }
+            },
+            "mmr_verify_stats": {
+                "mean_us": 2.8008,
+                "trimmed_mean_us": 2.6645,
+                "min_us": 2,
+                "max_us": 48,
+                "std_us": 2.172897219071638
+            }
+        },
+        {
+            "chain_length": 6000,
+            "log2_n": 12.550746785383243,
+            "test_block_height": 3000,
+            "actual_mmr_proof_items": 13,
+            "schemes": [
+                {
+                    "scheme_name": "HeaderChain",
+                    "chain_verify_time_us": 900.3,
+                    "block_verify_time_us": 0.0,
+                    "total_verify_time_us": 900.3,
+                    "speedup_vs_header_chain": 1.0
+                },
+                {
+                    "scheme_name": "Merkle",
+                    "chain_verify_time_us": 2.2359999999999998,
+                    "block_verify_time_us": 0.3,
+                    "total_verify_time_us": 2.5359999999999996,
+                    "speedup_vs_header_chain": 355.0078864353313
+                },
+                {
+                    "scheme_name": "MMR-Scattered",
+                    "chain_verify_time_us": 2.664,
+                    "block_verify_time_us": 0.3,
+                    "total_verify_time_us": 2.964,
+                    "speedup_vs_header_chain": 303.744939271255
+                },
+                {
+                    "scheme_name": "Two-Layer",
+                    "chain_verify_time_us": 2.66175,
+                    "block_verify_time_us": 0.2,
+                    "total_verify_time_us": 2.8617500000000002,
+                    "speedup_vs_header_chain": 314.59771119070496
+                }
+            ],
+            "two_layer_breakdown": {
+                "layer1_mmr_verify": {
+                    "mean_us": 2.6966,
+                    "trimmed_mean_us": 2.66175,
+                    "min_us": 2,
+                    "max_us": 19,
+                    "std_us": 0.7550288584910576
+                },
+                "layer2_ads_root_expand": {
+                    "mean_us": 0.2002,
+                    "trimmed_mean_us": 0.2,
+                    "min_us": 0,
+                    "max_us": 0,
+                    "std_us": 0.02238217871092307
+                },
+                "total": {
+                    "mean_us": 3.0061999999999998,
+                    "trimmed_mean_us": 2.97175,
+                    "min_us": 2,
+                    "max_us": 19,
+                    "std_us": 0.7590876023068427
+                },
+                "layer2_overhead_percent": 6.730041221502482
+            },
+            "measured_base_times": {
+                "single_hash": {
+                    "mean_us": 0.1684,
+                    "trimmed_mean_us": 0.172,
+                    "min_us": 0,
+                    "max_us": 0,
+                    "std_us": 0.049460415135042
+                },
+                "header_hash_scattered": {
+                    "mean_us": 0.30760000000000004,
+                    "trimmed_mean_us": 0.3,
+                    "min_us": 0,
+                    "max_us": 0,
+                    "std_us": 0.02652635094748585
+                },
+                "header_hash_unified": {
+                    "mean_us": 0.1744,
+                    "trimmed_mean_us": 0.1805,
+                    "min_us": 0,
+                    "max_us": 0,
+                    "std_us": 0.043685889184353836
+                },
+                "ads_root_expand": {
+                    "mean_us": 0.1686,
+                    "trimmed_mean_us": 0.17325,
+                    "min_us": 0,
+                    "max_us": 0,
+                    "std_us": 0.04645811784206113
+                }
+            },
+            "mmr_verify_stats": {
+                "mean_us": 2.8846,
+                "trimmed_mean_us": 2.664,
+                "min_us": 2,
+                "max_us": 108,
+                "std_us": 4.738232215611437
+            }
+        },
+        {
+            "chain_length": 7000,
+            "log2_n": 12.77313920671969,
+            "test_block_height": 3500,
+            "actual_mmr_proof_items": 13,
+            "schemes": [
+                {
+                    "scheme_name": "HeaderChain",
+                    "chain_verify_time_us": 1225.35,
+                    "block_verify_time_us": 0.0,
+                    "total_verify_time_us": 1225.35,
+                    "speedup_vs_header_chain": 1.0
+                },
+                {
+                    "scheme_name": "Merkle",
+                    "chain_verify_time_us": 2.53825,
+                    "block_verify_time_us": 0.35,
+                    "total_verify_time_us": 2.88825,
+                    "speedup_vs_header_chain": 424.25344066476237
+                },
+                {
+                    "scheme_name": "MMR-Scattered",
+                    "chain_verify_time_us": 3.532,
+                    "block_verify_time_us": 0.35,
+                    "total_verify_time_us": 3.882,
+                    "speedup_vs_header_chain": 315.6491499227202
+                },
+                {
+                    "scheme_name": "Two-Layer",
+                    "chain_verify_time_us": 3.8645,
+                    "block_verify_time_us": 0.29475,
+                    "total_verify_time_us": 4.15925,
+                    "speedup_vs_header_chain": 294.6084029572639
+                }
+            ],
+            "two_layer_breakdown": {
+                "layer1_mmr_verify": {
+                    "mean_us": 4.0684000000000005,
+                    "trimmed_mean_us": 3.8645,
+                    "min_us": 3,
+                    "max_us": 82,
+                    "std_us": 3.5839043207598307
+                },
+                "layer2_ads_root_expand": {
+                    "mean_us": 0.2864,
+                    "trimmed_mean_us": 0.29475,
+                    "min_us": 0,
+                    "max_us": 0,
+                    "std_us": 0.036574792287335386
+                },
+                "total": {
+                    "mean_us": 4.5216,
+                    "trimmed_mean_us": 4.317,
+                    "min_us": 4,
+                    "max_us": 83,
+                    "std_us": 3.6164694305751888
+                },
+                "layer2_overhead_percent": 6.82765809589993
+            },
+            "measured_base_times": {
+                "single_hash": {
+                    "mean_us": 0.18680000000000002,
+                    "trimmed_mean_us": 0.19525,
+                    "min_us": 0,
+                    "max_us": 0,
+                    "std_us": 0.035613151969270646
+                },
+                "header_hash_scattered": {
+                    "mean_us": 0.35,
+                    "trimmed_mean_us": 0.35,
+                    "min_us": 0,
+                    "max_us": 0,
+                    "std_us": 0.05005007512521915
+                },
+                "header_hash_unified": {
+                    "mean_us": 0.2144,
+                    "trimmed_mean_us": 0.2055,
+                    "min_us": 0,
+                    "max_us": 0,
+                    "std_us": 0.03514413493658468
+                },
+                "ads_root_expand": {
+                    "mean_us": 0.2068,
+                    "trimmed_mean_us": 0.2,
+                    "min_us": 0,
+                    "max_us": 0,
+                    "std_us": 0.025199802779391666
+                }
+            },
+            "mmr_verify_stats": {
+                "mean_us": 3.5556,
+                "trimmed_mean_us": 3.532,
+                "min_us": 3,
+                "max_us": 16,
+                "std_us": 0.5638301596206103
+            }
+        },
+        {
+            "chain_length": 8000,
+            "log2_n": 12.965784284662087,
+            "test_block_height": 4000,
+            "actual_mmr_proof_items": 13,
+            "schemes": [
+                {
+                    "scheme_name": "HeaderChain",
+                    "chain_verify_time_us": 1200.3,
+                    "block_verify_time_us": 0.0,
+                    "total_verify_time_us": 1200.3,
+                    "speedup_vs_header_chain": 1.0
+                },
+                {
+                    "scheme_name": "Merkle",
+                    "chain_verify_time_us": 2.07675,
+                    "block_verify_time_us": 0.3,
+                    "total_verify_time_us": 2.37675,
+                    "speedup_vs_header_chain": 505.0173556326917
+                },
+                {
+                    "scheme_name": "MMR-Scattered",
+                    "chain_verify_time_us": 2.64675,
+                    "block_verify_time_us": 0.3,
+                    "total_verify_time_us": 2.9467499999999998,
+                    "speedup_vs_header_chain": 407.3301094426063
+                },
+                {
+                    "scheme_name": "Two-Layer",
+                    "chain_verify_time_us": 2.664,
+                    "block_verify_time_us": 0.2,
+                    "total_verify_time_us": 2.8640000000000003,
+                    "speedup_vs_header_chain": 419.0991620111731
+                }
+            ],
+            "two_layer_breakdown": {
+                "layer1_mmr_verify": {
+                    "mean_us": 8.961200000000002,
+                    "trimmed_mean_us": 2.664,
+                    "min_us": 2,
+                    "max_us": 3151,
+                    "std_us": 140.824739406888
+                },
+                "layer2_ads_root_expand": {
+                    "mean_us": 0.1966,
+                    "trimmed_mean_us": 0.2,
+                    "min_us": 0,
+                    "max_us": 0,
+                    "std_us": 0.02023013882883819
+                },
+                "total": {
+                    "mean_us": 9.276399999999999,
+                    "trimmed_mean_us": 2.98175,
+                    "min_us": 2,
+                    "max_us": 3151,
+                    "std_us": 140.82405715355097
+                },
+                "layer2_overhead_percent": 6.707470445208351
+            },
+            "measured_base_times": {
+                "single_hash": {
+                    "mean_us": 0.158,
+                    "trimmed_mean_us": 0.15975,
+                    "min_us": 0,
+                    "max_us": 0,
+                    "std_us": 0.04980925540346588
+                },
+                "header_hash_scattered": {
+                    "mean_us": 0.32080000000000003,
+                    "trimmed_mean_us": 0.3,
+                    "min_us": 0,
+                    "max_us": 14,
+                    "std_us": 0.6135145966646851
+                },
+                "header_hash_unified": {
+                    "mean_us": 0.1676,
+                    "trimmed_mean_us": 0.172,
+                    "min_us": 0,
+                    "max_us": 0,
+                    "std_us": 0.046846870317205205
+                },
+                "ads_root_expand": {
+                    "mean_us": 0.15819999999999998,
+                    "trimmed_mean_us": 0.16025,
+                    "min_us": 0,
+                    "max_us": 0,
+                    "std_us": 0.04937241406434441
+                }
+            },
+            "mmr_verify_stats": {
+                "mean_us": 2.8552,
+                "trimmed_mean_us": 2.64675,
+                "min_us": 2,
+                "max_us": 104,
+                "std_us": 4.559989030679796
+            }
+        },
+        {
+            "chain_length": 9000,
+            "log2_n": 13.1357092861044,
+            "test_block_height": 4500,
+            "actual_mmr_proof_items": 14,
+            "schemes": [
+                {
+                    "scheme_name": "HeaderChain",
+                    "chain_verify_time_us": 1675.4972500000001,
+                    "block_verify_time_us": 0.0,
+                    "total_verify_time_us": 1675.4972500000001,
+                    "speedup_vs_header_chain": 1.0
+                },
+                {
+                    "scheme_name": "Merkle",
+                    "chain_verify_time_us": 2.8245,
+                    "block_verify_time_us": 0.37225,
+                    "total_verify_time_us": 3.19675,
+                    "speedup_vs_header_chain": 524.1252052866192
+                },
+                {
+                    "scheme_name": "MMR-Scattered",
+                    "chain_verify_time_us": 2.82125,
+                    "block_verify_time_us": 0.37225,
+                    "total_verify_time_us": 3.1935000000000002,
+                    "speedup_vs_header_chain": 524.6586034131831
+                },
+                {
+                    "scheme_name": "Two-Layer",
+                    "chain_verify_time_us": 2.81625,
+                    "block_verify_time_us": 0.2,
+                    "total_verify_time_us": 3.0162500000000003,
+                    "speedup_vs_header_chain": 555.490178201409
+                }
+            ],
+            "two_layer_breakdown": {
+                "layer1_mmr_verify": {
+                    "mean_us": 2.8374,
+                    "trimmed_mean_us": 2.81625,
+                    "min_us": 2,
+                    "max_us": 9,
+                    "std_us": 0.30680531122846477
+                },
+                "layer2_ads_root_expand": {
+                    "mean_us": 0.1978,
+                    "trimmed_mean_us": 0.2,
+                    "min_us": 0,
+                    "max_us": 0,
+                    "std_us": 0.021355845670180652
+                },
+                "total": {
+                    "mean_us": 3.1515999999999997,
+                    "trimmed_mean_us": 3.134,
+                    "min_us": 3,
+                    "max_us": 9,
+                    "std_us": 0.30666843832081125
+                },
+                "layer2_overhead_percent": 6.381620931716657
+            },
+            "measured_base_times": {
+                "single_hash": {
+                    "mean_us": 0.21280000000000002,
+                    "trimmed_mean_us": 0.20175,
+                    "min_us": 0,
+                    "max_us": 0,
+                    "std_us": 0.06484264906893168
+                },
+                "header_hash_scattered": {
+                    "mean_us": 0.3678,
+                    "trimmed_mean_us": 0.37225,
+                    "min_us": 0,
+                    "max_us": 0,
+                    "std_us": 0.046771092248741354
+                },
+                "header_hash_unified": {
+                    "mean_us": 0.2066,
+                    "trimmed_mean_us": 0.2,
+                    "min_us": 0,
+                    "max_us": 0,
+                    "std_us": 0.024853075276540744
+                },
+                "ads_root_expand": {
+                    "mean_us": 0.2018,
+                    "trimmed_mean_us": 0.2,
+                    "min_us": 0,
+                    "max_us": 0,
+                    "std_us": 0.025652994996775823
+                }
+            },
+            "mmr_verify_stats": {
+                "mean_us": 3.0141999999999998,
+                "trimmed_mean_us": 2.82125,
+                "min_us": 2,
+                "max_us": 50,
+                "std_us": 2.325337125126361
+            }
+        },
+        {
+            "chain_length": 10000,
+            "log2_n": 13.287712379549449,
+            "test_block_height": 5000,
+            "actual_mmr_proof_items": 14,
+            "schemes": [
+                {
+                    "scheme_name": "HeaderChain",
+                    "chain_verify_time_us": 1500.3,
+                    "block_verify_time_us": 0.0,
+                    "total_verify_time_us": 1500.3,
+                    "speedup_vs_header_chain": 1.0
+                },
+                {
+                    "scheme_name": "Merkle",
+                    "chain_verify_time_us": 2.408,
+                    "block_verify_time_us": 0.3,
+                    "total_verify_time_us": 2.7079999999999997,
+                    "speedup_vs_header_chain": 554.0251107828656
+                },
+                {
+                    "scheme_name": "MMR-Scattered",
+                    "chain_verify_time_us": 2.818,
+                    "block_verify_time_us": 0.3,
+                    "total_verify_time_us": 3.118,
+                    "speedup_vs_header_chain": 481.17382937780627
+                },
+                {
+                    "scheme_name": "Two-Layer",
+                    "chain_verify_time_us": 2.81975,
+                    "block_verify_time_us": 0.2,
+                    "total_verify_time_us": 3.01975,
+                    "speedup_vs_header_chain": 496.8292077158705
+                }
+            ],
+            "two_layer_breakdown": {
+                "layer1_mmr_verify": {
+                    "mean_us": 2.8396,
+                    "trimmed_mean_us": 2.81975,
+                    "min_us": 2,
+                    "max_us": 9,
+                    "std_us": 0.31968145467782394
+                },
+                "layer2_ads_root_expand": {
+                    "mean_us": 0.197,
+                    "trimmed_mean_us": 0.2,
+                    "min_us": 0,
+                    "max_us": 0,
+                    "std_us": 0.021258029250502748
+                },
+                "total": {
+                    "mean_us": 3.1502,
+                    "trimmed_mean_us": 3.13175,
+                    "min_us": 3,
+                    "max_us": 10,
+                    "std_us": 0.3197881939314769
+                },
+                "layer2_overhead_percent": 6.38620579548176
+            },
+            "measured_base_times": {
+                "single_hash": {
+                    "mean_us": 0.1978,
+                    "trimmed_mean_us": 0.172,
+                    "min_us": 0,
+                    "max_us": 5,
+                    "std_us": 0.2407718883184013
+                },
+                "header_hash_scattered": {
+                    "mean_us": 0.2958,
+                    "trimmed_mean_us": 0.3,
+                    "min_us": 0,
+                    "max_us": 0,
+                    "std_us": 0.023737880569838225
+                },
+                "header_hash_unified": {
+                    "mean_us": 0.1684,
+                    "trimmed_mean_us": 0.173,
+                    "min_us": 0,
+                    "max_us": 0,
+                    "std_us": 0.046537850649618545
+                },
+                "ads_root_expand": {
+                    "mean_us": 0.1792,
+                    "trimmed_mean_us": 0.1865,
+                    "min_us": 0,
+                    "max_us": 0,
+                    "std_us": 0.04062833152672282
+                }
+            },
+            "mmr_verify_stats": {
+                "mean_us": 2.8722,
+                "trimmed_mean_us": 2.818,
+                "min_us": 2,
+                "max_us": 20,
+                "std_us": 0.8079807087123436
+            }
+        },
+        {
+            "chain_length": 12000,
+            "log2_n": 13.550746785383243,
+            "test_block_height": 6000,
+            "actual_mmr_proof_items": 14,
+            "schemes": [
+                {
+                    "scheme_name": "HeaderChain",
+                    "chain_verify_time_us": 1800.3,
+                    "block_verify_time_us": 0.0,
+                    "total_verify_time_us": 1800.3,
+                    "speedup_vs_header_chain": 1.0
+                },
+                {
+                    "scheme_name": "Merkle",
+                    "chain_verify_time_us": 2.205,
+                    "block_verify_time_us": 0.3,
+                    "total_verify_time_us": 2.505,
+                    "speedup_vs_header_chain": 718.6826347305389
+                },
+                {
+                    "scheme_name": "MMR-Scattered",
+                    "chain_verify_time_us": 2.82175,
+                    "block_verify_time_us": 0.3,
+                    "total_verify_time_us": 3.12175,
+                    "speedup_vs_header_chain": 576.6957635941379
+                },
+                {
+                    "scheme_name": "Two-Layer",
+                    "chain_verify_time_us": 2.83625,
+                    "block_verify_time_us": 0.2,
+                    "total_verify_time_us": 3.0362500000000003,
+                    "speedup_vs_header_chain": 592.9353643474681
+                }
+            ],
+            "two_layer_breakdown": {
+                "layer1_mmr_verify": {
+                    "mean_us": 2.8884000000000003,
+                    "trimmed_mean_us": 2.83625,
+                    "min_us": 2,
+                    "max_us": 26,
+                    "std_us": 1.0383360358992044
+                },
+                "layer2_ads_root_expand": {
+                    "mean_us": 0.199,
+                    "trimmed_mean_us": 0.2,
+                    "min_us": 0,
+                    "max_us": 0,
+                    "std_us": 0.026465086465061974
+                },
+                "total": {
+                    "mean_us": 3.2014,
+                    "trimmed_mean_us": 3.15,
+                    "min_us": 3,
+                    "max_us": 26,
+                    "std_us": 1.0559204401620021
+                },
+                "layer2_overhead_percent": 6.349206349206351
+            },
+            "measured_base_times": {
+                "single_hash": {
+                    "mean_us": 0.156,
+                    "trimmed_mean_us": 0.1575,
+                    "min_us": 0,
+                    "max_us": 0,
+                    "std_us": 0.04968840786090356
+                },
+                "header_hash_scattered": {
+                    "mean_us": 0.296,
+                    "trimmed_mean_us": 0.3,
+                    "min_us": 0,
+                    "max_us": 0,
+                    "std_us": 0.022472427996104032
+                },
+                "header_hash_unified": {
+                    "mean_us": 0.1706,
+                    "trimmed_mean_us": 0.17575,
+                    "min_us": 0,
+                    "max_us": 0,
+                    "std_us": 0.04560481991191704
+                },
+                "ads_root_expand": {
+                    "mean_us": 0.1608,
+                    "trimmed_mean_us": 0.1635,
+                    "min_us": 0,
+                    "max_us": 0,
+                    "std_us": 0.04886856118758855
+                }
+            },
+            "mmr_verify_stats": {
+                "mean_us": 3.0625999999999998,
+                "trimmed_mean_us": 2.82175,
+                "min_us": 2,
+                "max_us": 107,
+                "std_us": 4.702199762367662
+            }
+        },
+        {
+            "chain_length": 14000,
+            "log2_n": 13.77313920671969,
+            "test_block_height": 7000,
+            "actual_mmr_proof_items": 14,
+            "schemes": [
+                {
+                    "scheme_name": "HeaderChain",
+                    "chain_verify_time_us": 2100.2999999999997,
+                    "block_verify_time_us": 0.0,
+                    "total_verify_time_us": 2100.2999999999997,
+                    "speedup_vs_header_chain": 1.0
+                },
+                {
+                    "scheme_name": "Merkle",
+                    "chain_verify_time_us": 2.2505,
+                    "block_verify_time_us": 0.3,
+                    "total_verify_time_us": 2.5505,
+                    "speedup_vs_header_chain": 823.4855910605762
+                },
+                {
+                    "scheme_name": "MMR-Scattered",
+                    "chain_verify_time_us": 2.81775,
+                    "block_verify_time_us": 0.3,
+                    "total_verify_time_us": 3.11775,
+                    "speedup_vs_header_chain": 673.658888621602
+                },
+                {
+                    "scheme_name": "Two-Layer",
+                    "chain_verify_time_us": 2.82675,
+                    "block_verify_time_us": 0.2,
+                    "total_verify_time_us": 3.0267500000000003,
+                    "speedup_vs_header_chain": 693.9126125382008
+                }
+            ],
+            "two_layer_breakdown": {
+                "layer1_mmr_verify": {
+                    "mean_us": 2.8668,
+                    "trimmed_mean_us": 2.82675,
+                    "min_us": 2,
+                    "max_us": 19,
+                    "std_us": 0.765080686538244
+                },
+                "layer2_ads_root_expand": {
+                    "mean_us": 0.1978,
+                    "trimmed_mean_us": 0.2,
+                    "min_us": 0,
+                    "max_us": 0,
+                    "std_us": 0.017197427220546953
+                },
+                "total": {
+                    "mean_us": 3.1761999999999997,
+                    "trimmed_mean_us": 3.137,
+                    "min_us": 3,
+                    "max_us": 20,
+                    "std_us": 0.764815956223317
+                },
+                "layer2_overhead_percent": 6.375518010838381
+            },
+            "measured_base_times": {
+                "single_hash": {
+                    "mean_us": 0.1586,
+                    "trimmed_mean_us": 0.16075,
+                    "min_us": 0,
+                    "max_us": 0,
+                    "std_us": 0.049304176330278525
+                },
+                "header_hash_scattered": {
+                    "mean_us": 0.2968,
+                    "trimmed_mean_us": 0.3,
+                    "min_us": 0,
+                    "max_us": 0,
+                    "std_us": 0.01976211229004455
+                },
+                "header_hash_unified": {
+                    "mean_us": 0.1672,
+                    "trimmed_mean_us": 0.1715,
+                    "min_us": 0,
+                    "max_us": 0,
+                    "std_us": 0.046995501426291976
+                },
+                "ads_root_expand": {
+                    "mean_us": 0.1316,
+                    "trimmed_mean_us": 0.127,
+                    "min_us": 0,
+                    "max_us": 0,
+                    "std_us": 0.046537850649618545
+                }
+            },
+            "mmr_verify_stats": {
+                "mean_us": 3.0478,
+                "trimmed_mean_us": 2.81775,
+                "min_us": 2,
+                "max_us": 113,
+                "std_us": 4.949955482482359
+            }
+        },
+        {
+            "chain_length": 16000,
+            "log2_n": 13.965784284662087,
+            "test_block_height": 8000,
+            "actual_mmr_proof_items": 14,
+            "schemes": [
+                {
+                    "scheme_name": "HeaderChain",
+                    "chain_verify_time_us": 2400.2999999999997,
+                    "block_verify_time_us": 0.0,
+                    "total_verify_time_us": 2400.2999999999997,
+                    "speedup_vs_header_chain": 1.0
+                },
+                {
+                    "scheme_name": "Merkle",
+                    "chain_verify_time_us": 2.2365,
+                    "block_verify_time_us": 0.3,
+                    "total_verify_time_us": 2.5364999999999998,
+                    "speedup_vs_header_chain": 946.3039621525725
+                },
+                {
+                    "scheme_name": "MMR-Scattered",
+                    "chain_verify_time_us": 3.57425,
+                    "block_verify_time_us": 0.3,
+                    "total_verify_time_us": 3.87425,
+                    "speedup_vs_header_chain": 619.5521713880105
+                },
+                {
+                    "scheme_name": "Two-Layer",
+                    "chain_verify_time_us": 2.8205,
+                    "block_verify_time_us": 0.2,
+                    "total_verify_time_us": 3.0205,
+                    "speedup_vs_header_chain": 794.669756662804
+                }
+            ],
+            "two_layer_breakdown": {
+                "layer1_mmr_verify": {
+                    "mean_us": 2.8851999999999998,
+                    "trimmed_mean_us": 2.8205,
+                    "min_us": 2,
+                    "max_us": 25,
+                    "std_us": 1.0550484417451416
+                },
+                "layer2_ads_root_expand": {
+                    "mean_us": 0.1978,
+                    "trimmed_mean_us": 0.2,
+                    "min_us": 0,
+                    "max_us": 0,
+                    "std_us": 0.01938844562225893
+                },
+                "total": {
+                    "mean_us": 3.1958,
+                    "trimmed_mean_us": 3.133,
+                    "min_us": 3,
+                    "max_us": 25,
+                    "std_us": 1.054697650641422
+                },
+                "layer2_overhead_percent": 6.383657835939995
+            },
+            "measured_base_times": {
+                "single_hash": {
+                    "mean_us": 0.158,
+                    "trimmed_mean_us": 0.15975,
+                    "min_us": 0,
+                    "max_us": 0,
+                    "std_us": 0.04980925540346588
+                },
+                "header_hash_scattered": {
+                    "mean_us": 0.4092,
+                    "trimmed_mean_us": 0.3,
+                    "min_us": 0,
+                    "max_us": 56,
+                    "std_us": 2.500131331219747
+                },
+                "header_hash_unified": {
+                    "mean_us": 0.1678,
+                    "trimmed_mean_us": 0.172,
+                    "min_us": 0,
+                    "max_us": 0,
+                    "std_us": 0.047197618906687624
+                },
+                "ads_root_expand": {
+                    "mean_us": 0.15780000000000002,
+                    "trimmed_mean_us": 0.1595,
+                    "min_us": 0,
+                    "max_us": 0,
+                    "std_us": 0.049841029850044495
+                }
+            },
+            "mmr_verify_stats": {
+                "mean_us": 3.6664,
+                "trimmed_mean_us": 3.57425,
+                "min_us": 2,
+                "max_us": 23,
+                "std_us": 1.4337581262993726
+            }
+        },
+        {
+            "chain_length": 18000,
+            "log2_n": 14.1357092861044,
+            "test_block_height": 9000,
+            "actual_mmr_proof_items": 15,
+            "schemes": [
+                {
+                    "scheme_name": "HeaderChain",
+                    "chain_verify_time_us": 2700.2999999999997,
+                    "block_verify_time_us": 0.0,
+                    "total_verify_time_us": 2700.2999999999997,
+                    "speedup_vs_header_chain": 1.0
+                },
+                {
+                    "scheme_name": "Merkle",
+                    "chain_verify_time_us": 2.32875,
+                    "block_verify_time_us": 0.3,
+                    "total_verify_time_us": 2.6287499999999997,
+                    "speedup_vs_header_chain": 1027.2182596291013
+                },
+                {
+                    "scheme_name": "MMR-Scattered",
+                    "chain_verify_time_us": 3.066,
+                    "block_verify_time_us": 0.3,
+                    "total_verify_time_us": 3.3659999999999997,
+                    "speedup_vs_header_chain": 802.2281639928699
+                },
+                {
+                    "scheme_name": "Two-Layer",
+                    "chain_verify_time_us": 3.00075,
+                    "block_verify_time_us": 0.2,
+                    "total_verify_time_us": 3.20075,
+                    "speedup_vs_header_chain": 843.6460204639536
+                }
+            ],
+            "two_layer_breakdown": {
+                "layer1_mmr_verify": {
+                    "mean_us": 3.0198,
+                    "trimmed_mean_us": 3.00075,
+                    "min_us": 2,
+                    "max_us": 10,
+                    "std_us": 0.3333018756031245
+                },
+                "layer2_ads_root_expand": {
+                    "mean_us": 0.19540000000000002,
+                    "trimmed_mean_us": 0.2,
+                    "min_us": 0,
+                    "max_us": 0,
+                    "std_us": 0.022800871902605862
+                },
+                "total": {
+                    "mean_us": 3.324,
+                    "trimmed_mean_us": 3.30275,
+                    "min_us": 3,
+                    "max_us": 10,
+                    "std_us": 0.33329592308441064
+                },
+                "layer2_overhead_percent": 6.055559760805389
+            },
+            "measured_base_times": {
+                "single_hash": {
+                    "mean_us": 0.15419999999999998,
+                    "trimmed_mean_us": 0.15525,
+                    "min_us": 0,
+                    "max_us": 0,
+                    "std_us": 0.04987318587516412
+                },
+                "header_hash_scattered": {
+                    "mean_us": 0.3048,
+                    "trimmed_mean_us": 0.3,
+                    "min_us": 0,
+                    "max_us": 0,
+                    "std_us": 0.023195604586737768
+                },
+                "header_hash_unified": {
+                    "mean_us": 0.1722,
+                    "trimmed_mean_us": 0.17725,
+                    "min_us": 0,
+                    "max_us": 0,
+                    "std_us": 0.0457312003491132
+                },
+                "ads_root_expand": {
+                    "mean_us": 0.165,
+                    "trimmed_mean_us": 0.16875,
+                    "min_us": 0,
+                    "max_us": 0,
+                    "std_us": 0.04774472869580968
+                }
+            },
+            "mmr_verify_stats": {
+                "mean_us": 3.1364,
+                "trimmed_mean_us": 3.066,
+                "min_us": 2,
+                "max_us": 22,
+                "std_us": 1.0593769863454716
+            }
+        },
+        {
+            "chain_length": 20000,
+            "log2_n": 14.287712379549449,
+            "test_block_height": 10000,
+            "actual_mmr_proof_items": 15,
+            "schemes": [
+                {
+                    "scheme_name": "HeaderChain",
+                    "chain_verify_time_us": 3000.2999999999997,
+                    "block_verify_time_us": 0.0,
+                    "total_verify_time_us": 3000.2999999999997,
+                    "speedup_vs_header_chain": 1.0
+                },
+                {
+                    "scheme_name": "Merkle",
+                    "chain_verify_time_us": 2.4,
+                    "block_verify_time_us": 0.3,
+                    "total_verify_time_us": 2.6999999999999997,
+                    "speedup_vs_header_chain": 1111.2222222222222
+                },
+                {
+                    "scheme_name": "MMR-Scattered",
+                    "chain_verify_time_us": 3.00175,
+                    "block_verify_time_us": 0.3,
+                    "total_verify_time_us": 3.3017499999999997,
+                    "speedup_vs_header_chain": 908.6999318543196
+                },
+                {
+                    "scheme_name": "Two-Layer",
+                    "chain_verify_time_us": 3.0025,
+                    "block_verify_time_us": 0.2,
+                    "total_verify_time_us": 3.2025,
+                    "speedup_vs_header_chain": 936.8618266978922
+                }
+            ],
+            "two_layer_breakdown": {
+                "layer1_mmr_verify": {
+                    "mean_us": 3.0366,
+                    "trimmed_mean_us": 3.0025,
+                    "min_us": 2,
+                    "max_us": 17,
+                    "std_us": 0.6404848801990005
+                },
+                "layer2_ads_root_expand": {
+                    "mean_us": 0.1996,
+                    "trimmed_mean_us": 0.2,
+                    "min_us": 0,
+                    "max_us": 0,
+                    "std_us": 0.021927188675396028
+                },
+                "total": {
+                    "mean_us": 3.3482,
+                    "trimmed_mean_us": 3.31275,
+                    "min_us": 3,
+                    "max_us": 17,
+                    "std_us": 0.640090768863896
+                },
+                "layer2_overhead_percent": 6.037280205267527
+            },
+            "measured_base_times": {
+                "single_hash": {
+                    "mean_us": 0.15919999999999998,
+                    "trimmed_mean_us": 0.16,
+                    "min_us": 0,
+                    "max_us": 0,
+                    "std_us": 0.05386243890364857
+                },
+                "header_hash_scattered": {
+                    "mean_us": 0.297,
+                    "trimmed_mean_us": 0.3,
+                    "min_us": 0,
+                    "max_us": 0,
+                    "std_us": 0.021258029250502748
+                },
+                "header_hash_unified": {
+                    "mean_us": 0.1688,
+                    "trimmed_mean_us": 0.173,
+                    "min_us": 0,
+                    "max_us": 0,
+                    "std_us": 0.04765608255415868
+                },
+                "ads_root_expand": {
+                    "mean_us": 0.1694,
+                    "trimmed_mean_us": 0.17425,
+                    "min_us": 0,
+                    "max_us": 0,
+                    "std_us": 0.046129120862890484
+                }
+            },
+            "mmr_verify_stats": {
+                "mean_us": 3.0944000000000003,
+                "trimmed_mean_us": 3.00175,
+                "min_us": 2,
+                "max_us": 28,
+                "std_us": 1.3620863402871342
+            }
+        }
     ],
-    "verify_iterations": 100,
-    "hash_size": 32,
-    "scattered_block_header_size": 164,
-    "unified_block_header_size": 100,
-    "schemes": [
-      {
-        "name": "HeaderChain",
-        "chain_proof_type": "HeaderChain",
-        "block_verify_type": "None",
-        "description": "区块头链同步验证（最原始方案）",
-        "block_header_size": 164,
-        "is_two_layer": false
-      },
-      {
-        "name": "Merkle",
-        "chain_proof_type": "Merkle",
-        "block_verify_type": "HeaderHash",
-        "description": "Merkle树证明验证（常见优化方案）",
-        "block_header_size": 164,
-        "is_two_layer": false
-      },
-      {
-        "name": "MMR-Scattered",
-        "chain_proof_type": "MMR",
-        "block_verify_type": "HeaderHash",
-        "description": "MMR验证 + 分散索引根（仅链级优化）",
-        "block_header_size": 164,
-        "is_two_layer": false
-      },
-      {
-        "name": "Two-Layer",
-        "chain_proof_type": "MMR",
-        "block_verify_type": "AdsRootExpand",
-        "description": "MMR验证 + BlockADSRoot展开验证（本文两层式方案）",
-        "block_header_size": 100,
-        "is_two_layer": true
-      }
-    ]
-  },
-  "results": [
-    {
-      "chain_length": 100,
-      "log2_n": 6.643856189774724,
-      "test_block_height": 50,
-      "actual_mmr_proof_items": 7,
-      "schemes": [
-        {
-          "scheme_name": "HeaderChain",
-          "chain_verify_time_us": 15.657,
-          "block_verify_time_us": 0.0,
-          "total_verify_time_us": 15.657,
-          "speedup_vs_header_chain": 1.0
-        },
-        {
-          "scheme_name": "Merkle",
-          "chain_verify_time_us": 1.274,
-          "block_verify_time_us": 0.307,
-          "total_verify_time_us": 1.581,
-          "speedup_vs_header_chain": 9.903225806451614
-        },
-        {
-          "scheme_name": "MMR-Scattered",
-          "chain_verify_time_us": 4.395,
-          "block_verify_time_us": 0.307,
-          "total_verify_time_us": 4.702,
-          "speedup_vs_header_chain": 3.3298596341982134
-        },
-        {
-          "scheme_name": "Two-Layer",
-          "chain_verify_time_us": 1.588,
-          "block_verify_time_us": 0.201,
-          "total_verify_time_us": 1.7890000000000001,
-          "speedup_vs_header_chain": 8.751816657350474
-        }
-      ],
-      "two_layer_breakdown": {
-        "layer1_mmr_verify": {
-          "mean_us": 1.588,
-          "min_us": 1,
-          "max_us": 1,
-          "std_us": 0.0477366513151884
-        },
-        "layer2_ads_root_expand": {
-          "mean_us": 0.201,
-          "min_us": 0,
-          "max_us": 0,
-          "std_us": 0.030134379171982424
-        },
-        "total": {
-          "mean_us": 1.894,
-          "min_us": 1,
-          "max_us": 2,
-          "std_us": 0.04454030067072273
-        },
-        "layer2_overhead_percent": 10.61246040126716
-      },
-      "measured_base_times": {
-        "single_hash": {
-          "mean_us": 0.182,
-          "min_us": 0,
-          "max_us": 0,
-          "std_us": 0.05199067515459194
-        },
-        "header_hash_scattered": {
-          "mean_us": 0.307,
-          "min_us": 0,
-          "max_us": 0,
-          "std_us": 0.04323999271157397
-        },
-        "header_hash_unified": {
-          "mean_us": 0.193,
-          "min_us": 0,
-          "max_us": 0,
-          "std_us": 0.02931886695621029
-        },
-        "ads_root_expand": {
-          "mean_us": 0.192,
-          "min_us": 0,
-          "max_us": 0,
-          "std_us": 0.030748244591432296
-        }
-      },
-      "mmr_verify_stats": {
-        "mean_us": 4.395,
-        "min_us": 1,
-        "max_us": 281,
-        "std_us": 27.990454271108753
-      }
-    },
-    {
-      "chain_length": 200,
-      "log2_n": 7.643856189774724,
-      "test_block_height": 100,
-      "actual_mmr_proof_items": 8,
-      "schemes": [
-        {
-          "scheme_name": "HeaderChain",
-          "chain_verify_time_us": 30.502,
-          "block_verify_time_us": 0.0,
-          "total_verify_time_us": 30.502,
-          "speedup_vs_header_chain": 1.0
-        },
-        {
-          "scheme_name": "Merkle",
-          "chain_verify_time_us": 1.464,
-          "block_verify_time_us": 0.302,
-          "total_verify_time_us": 1.766,
-          "speedup_vs_header_chain": 17.2718006795017
-        },
-        {
-          "scheme_name": "MMR-Scattered",
-          "chain_verify_time_us": 1.788,
-          "block_verify_time_us": 0.302,
-          "total_verify_time_us": 2.09,
-          "speedup_vs_header_chain": 14.594258373205742
-        },
-        {
-          "scheme_name": "Two-Layer",
-          "chain_verify_time_us": 1.768,
-          "block_verify_time_us": 0.199,
-          "total_verify_time_us": 1.967,
-          "speedup_vs_header_chain": 15.506863243518046
-        }
-      ],
-      "two_layer_breakdown": {
-        "layer1_mmr_verify": {
-          "mean_us": 1.768,
-          "min_us": 1,
-          "max_us": 1,
-          "std_us": 0.05101000100000197
-        },
-        "layer2_ads_root_expand": {
-          "mean_us": 0.199,
-          "min_us": 0,
-          "max_us": 0,
-          "std_us": 0.01
-        },
-        "total": {
-          "mean_us": 2.066,
-          "min_us": 2,
-          "max_us": 2,
-          "std_us": 0.05545040554177647
-        },
-        "layer2_overhead_percent": 9.63213939980639
-      },
-      "measured_base_times": {
-        "single_hash": {
-          "mean_us": 0.183,
-          "min_us": 0,
-          "max_us": 0,
-          "std_us": 0.058697994390392465
-        },
-        "header_hash_scattered": {
-          "mean_us": 0.302,
-          "min_us": 0,
-          "max_us": 0,
-          "std_us": 0.02
-        },
-        "header_hash_unified": {
-          "mean_us": 0.188,
-          "min_us": 0,
-          "max_us": 0,
-          "std_us": 0.032659863237109045
-        },
-        "ads_root_expand": {
-          "mean_us": 0.189,
-          "min_us": 0,
-          "max_us": 0,
-          "std_us": 0.031446603773522014
-        }
-      },
-      "mmr_verify_stats": {
-        "mean_us": 1.788,
-        "min_us": 1,
-        "max_us": 2,
-        "std_us": 0.11915527599724571
-      }
-    },
-    {
-      "chain_length": 300,
-      "log2_n": 8.228818690495881,
-      "test_block_height": 150,
-      "actual_mmr_proof_items": 9,
-      "schemes": [
-        {
-          "scheme_name": "HeaderChain",
-          "chain_verify_time_us": 46.205999999999996,
-          "block_verify_time_us": 0.0,
-          "total_verify_time_us": 46.205999999999996,
-          "speedup_vs_header_chain": 1.0
-        },
-        {
-          "scheme_name": "Merkle",
-          "chain_verify_time_us": 1.674,
-          "block_verify_time_us": 0.306,
-          "total_verify_time_us": 1.98,
-          "speedup_vs_header_chain": 23.336363636363636
-        },
-        {
-          "scheme_name": "MMR-Scattered",
-          "chain_verify_time_us": 1.958,
-          "block_verify_time_us": 0.306,
-          "total_verify_time_us": 2.264,
-          "speedup_vs_header_chain": 20.409010600706715
-        },
-        {
-          "scheme_name": "Two-Layer",
-          "chain_verify_time_us": 1.939,
-          "block_verify_time_us": 0.202,
-          "total_verify_time_us": 2.141,
-          "speedup_vs_header_chain": 21.581503970107423
-        }
-      ],
-      "two_layer_breakdown": {
-        "layer1_mmr_verify": {
-          "mean_us": 1.939,
-          "min_us": 1,
-          "max_us": 2,
-          "std_us": 0.05103969538555755
-        },
-        "layer2_ads_root_expand": {
-          "mean_us": 0.202,
-          "min_us": 0,
-          "max_us": 0,
-          "std_us": 0.024536099975754132
-        },
-        "total": {
-          "mean_us": 2.249,
-          "min_us": 2,
-          "max_us": 2,
-          "std_us": 0.054113610379301326
-        },
-        "layer2_overhead_percent": 8.981769675411295
-      },
-      "measured_base_times": {
-        "single_hash": {
-          "mean_us": 0.186,
-          "min_us": 0,
-          "max_us": 0,
-          "std_us": 0.049277609806917665
-        },
-        "header_hash_scattered": {
-          "mean_us": 0.306,
-          "min_us": 0,
-          "max_us": 0,
-          "std_us": 0.0238683256575942
-        },
-        "header_hash_unified": {
-          "mean_us": 0.185,
-          "min_us": 0,
-          "max_us": 0,
-          "std_us": 0.03588702812826367
-        },
-        "ads_root_expand": {
-          "mean_us": 0.191,
-          "min_us": 0,
-          "max_us": 0,
-          "std_us": 0.028762349126466132
-        }
-      },
-      "mmr_verify_stats": {
-        "mean_us": 1.958,
-        "min_us": 1,
-        "max_us": 2,
-        "std_us": 0.10267138910823279
-      }
-    },
-    {
-      "chain_length": 400,
-      "log2_n": 8.643856189774725,
-      "test_block_height": 200,
-      "actual_mmr_proof_items": 9,
-      "schemes": [
-        {
-          "scheme_name": "HeaderChain",
-          "chain_verify_time_us": 60.903,
-          "block_verify_time_us": 0.0,
-          "total_verify_time_us": 60.903,
-          "speedup_vs_header_chain": 1.0
-        },
-        {
-          "scheme_name": "Merkle",
-          "chain_verify_time_us": 1.692,
-          "block_verify_time_us": 0.303,
-          "total_verify_time_us": 1.9949999999999999,
-          "speedup_vs_header_chain": 30.52781954887218
-        },
-        {
-          "scheme_name": "MMR-Scattered",
-          "chain_verify_time_us": 1.955,
-          "block_verify_time_us": 0.303,
-          "total_verify_time_us": 2.258,
-          "speedup_vs_header_chain": 26.972099202834364
-        },
-        {
-          "scheme_name": "Two-Layer",
-          "chain_verify_time_us": 1.939,
-          "block_verify_time_us": 0.206,
-          "total_verify_time_us": 2.145,
-          "speedup_vs_header_chain": 28.393006993006992
-        }
-      ],
-      "two_layer_breakdown": {
-        "layer1_mmr_verify": {
-          "mean_us": 1.939,
-          "min_us": 1,
-          "max_us": 2,
-          "std_us": 0.04902071300001973
-        },
-        "layer2_ads_root_expand": {
-          "mean_us": 0.206,
-          "min_us": 0,
-          "max_us": 0,
-          "std_us": 0.031204765240863033
-        },
-        "total": {
-          "mean_us": 2.257,
-          "min_us": 2,
-          "max_us": 2,
-          "std_us": 0.05551412596644373
-        },
-        "layer2_overhead_percent": 9.127159946832077
-      },
-      "measured_base_times": {
-        "single_hash": {
-          "mean_us": 0.188,
-          "min_us": 0,
-          "max_us": 0,
-          "std_us": 0.055559595812682855
-        },
-        "header_hash_scattered": {
-          "mean_us": 0.303,
-          "min_us": 0,
-          "max_us": 0,
-          "std_us": 0.01714466079977653
-        },
-        "header_hash_unified": {
-          "mean_us": 0.188,
-          "min_us": 0,
-          "max_us": 0,
-          "std_us": 0.032659863237109045
-        },
-        "ads_root_expand": {
-          "mean_us": 0.189,
-          "min_us": 0,
-          "max_us": 0,
-          "std_us": 0.031446603773522014
-        }
-      },
-      "mmr_verify_stats": {
-        "mean_us": 1.955,
-        "min_us": 1,
-        "max_us": 3,
-        "std_us": 0.11752927853573897
-      }
-    },
-    {
-      "chain_length": 500,
-      "log2_n": 8.965784284662087,
-      "test_block_height": 250,
-      "actual_mmr_proof_items": 9,
-      "schemes": [
-        {
-          "scheme_name": "HeaderChain",
-          "chain_verify_time_us": 76.55499999999999,
-          "block_verify_time_us": 0.0,
-          "total_verify_time_us": 76.55499999999999,
-          "speedup_vs_header_chain": 1.0
-        },
-        {
-          "scheme_name": "Merkle",
-          "chain_verify_time_us": 1.701,
-          "block_verify_time_us": 0.305,
-          "total_verify_time_us": 2.0060000000000002,
-          "speedup_vs_header_chain": 38.16301096709869
-        },
-        {
-          "scheme_name": "MMR-Scattered",
-          "chain_verify_time_us": 2.021,
-          "block_verify_time_us": 0.305,
-          "total_verify_time_us": 2.326,
-          "speedup_vs_header_chain": 32.91272570937231
-        },
-        {
-          "scheme_name": "Two-Layer",
-          "chain_verify_time_us": 1.941,
-          "block_verify_time_us": 0.202,
-          "total_verify_time_us": 2.1430000000000002,
-          "speedup_vs_header_chain": 35.723285114325705
-        }
-      ],
-      "two_layer_breakdown": {
-        "layer1_mmr_verify": {
-          "mean_us": 1.941,
-          "min_us": 1,
-          "max_us": 2,
-          "std_us": 0.051433982399329586
-        },
-        "layer2_ads_root_expand": {
-          "mean_us": 0.202,
-          "min_us": 0,
-          "max_us": 0,
-          "std_us": 0.028355606218883844
-        },
-        "total": {
-          "mean_us": 2.253,
-          "min_us": 2,
-          "max_us": 2,
-          "std_us": 0.055876848714134036
-        },
-        "layer2_overhead_percent": 8.965823346648913
-      },
-      "measured_base_times": {
-        "single_hash": {
-          "mean_us": 0.189,
-          "min_us": 0,
-          "max_us": 1,
-          "std_us": 0.09089343299499784
-        },
-        "header_hash_scattered": {
-          "mean_us": 0.305,
-          "min_us": 0,
-          "max_us": 0,
-          "std_us": 0.021904291355759033
-        },
-        "header_hash_unified": {
-          "mean_us": 0.19,
-          "min_us": 0,
-          "max_us": 0,
-          "std_us": 0.03015113445777636
-        },
-        "ads_root_expand": {
-          "mean_us": 0.189,
-          "min_us": 0,
-          "max_us": 0,
-          "std_us": 0.031446603773522014
-        }
-      },
-      "mmr_verify_stats": {
-        "mean_us": 2.021,
-        "min_us": 1,
-        "max_us": 7,
-        "std_us": 0.5362222891994918
-      }
-    },
-    {
-      "chain_length": 750,
-      "log2_n": 9.550746785383243,
-      "test_block_height": 375,
-      "actual_mmr_proof_items": 10,
-      "schemes": [
-        {
-          "scheme_name": "HeaderChain",
-          "chain_verify_time_us": 120.32000000000001,
-          "block_verify_time_us": 0.0,
-          "total_verify_time_us": 120.32000000000001,
-          "speedup_vs_header_chain": 1.0
-        },
-        {
-          "scheme_name": "Merkle",
-          "chain_verify_time_us": 1.9,
-          "block_verify_time_us": 0.32,
-          "total_verify_time_us": 2.2199999999999998,
-          "speedup_vs_header_chain": 54.198198198198206
-        },
-        {
-          "scheme_name": "MMR-Scattered",
-          "chain_verify_time_us": 2.32,
-          "block_verify_time_us": 0.32,
-          "total_verify_time_us": 2.6399999999999997,
-          "speedup_vs_header_chain": 45.575757575757585
-        },
-        {
-          "scheme_name": "Two-Layer",
-          "chain_verify_time_us": 2.156,
-          "block_verify_time_us": 0.235,
-          "total_verify_time_us": 2.391,
-          "speedup_vs_header_chain": 50.32204098703472
-        }
-      ],
-      "two_layer_breakdown": {
-        "layer1_mmr_verify": {
-          "mean_us": 2.156,
-          "min_us": 2,
-          "max_us": 2,
-          "std_us": 0.12658689673201734
-        },
-        "layer2_ads_root_expand": {
-          "mean_us": 0.235,
-          "min_us": 0,
-          "max_us": 2,
-          "std_us": 0.261840802894824
-        },
-        "total": {
-          "mean_us": 2.502,
-          "min_us": 2,
-          "max_us": 5,
-          "std_us": 0.2877920124399606
-        },
-        "layer2_overhead_percent": 9.392486011191048
-      },
-      "measured_base_times": {
-        "single_hash": {
-          "mean_us": 0.19,
-          "min_us": 0,
-          "max_us": 0,
-          "std_us": 0.05412294272573258
-        },
-        "header_hash_scattered": {
-          "mean_us": 0.32,
-          "min_us": 0,
-          "max_us": 0,
-          "std_us": 0.04020151261036848
-        },
-        "header_hash_unified": {
-          "mean_us": 0.192,
-          "min_us": 0,
-          "max_us": 0,
-          "std_us": 0.027265992434429072
-        },
-        "ads_root_expand": {
-          "mean_us": 0.196,
-          "min_us": 0,
-          "max_us": 0,
-          "std_us": 0.024287836253956217
-        }
-      },
-      "mmr_verify_stats": {
-        "mean_us": 2.32,
-        "min_us": 2,
-        "max_us": 10,
-        "std_us": 0.8140185886245244
-      }
-    },
-    {
-      "chain_length": 1000,
-      "log2_n": 9.965784284662087,
-      "test_block_height": 500,
-      "actual_mmr_proof_items": 10,
-      "schemes": [
-        {
-          "scheme_name": "HeaderChain",
-          "chain_verify_time_us": 153.807,
-          "block_verify_time_us": 0.0,
-          "total_verify_time_us": 153.807,
-          "speedup_vs_header_chain": 1.0
-        },
-        {
-          "scheme_name": "Merkle",
-          "chain_verify_time_us": 1.81,
-          "block_verify_time_us": 0.307,
-          "total_verify_time_us": 2.117,
-          "speedup_vs_header_chain": 72.6532829475673
-        },
-        {
-          "scheme_name": "MMR-Scattered",
-          "chain_verify_time_us": 2.142,
-          "block_verify_time_us": 0.307,
-          "total_verify_time_us": 2.449,
-          "speedup_vs_header_chain": 62.80400163331972
-        },
-        {
-          "scheme_name": "Two-Layer",
-          "chain_verify_time_us": 2.118,
-          "block_verify_time_us": 0.205,
-          "total_verify_time_us": 2.323,
-          "speedup_vs_header_chain": 66.21050365906156
-        }
-      ],
-      "two_layer_breakdown": {
-        "layer1_mmr_verify": {
-          "mean_us": 2.118,
-          "min_us": 2,
-          "max_us": 2,
-          "std_us": 0.04114522199392407
-        },
-        "layer2_ads_root_expand": {
-          "mean_us": 0.205,
-          "min_us": 0,
-          "max_us": 0,
-          "std_us": 0.03588702812826367
-        },
-        "total": {
-          "mean_us": 2.427,
-          "min_us": 2,
-          "max_us": 2,
-          "std_us": 0.05290548080293665
-        },
-        "layer2_overhead_percent": 8.446641944787803
-      },
-      "measured_base_times": {
-        "single_hash": {
-          "mean_us": 0.181,
-          "min_us": 0,
-          "max_us": 0,
-          "std_us": 0.046482319871173176
-        },
-        "header_hash_scattered": {
-          "mean_us": 0.307,
-          "min_us": 0,
-          "max_us": 0,
-          "std_us": 0.025643239997624277
-        },
-        "header_hash_unified": {
-          "mean_us": 0.185,
-          "min_us": 0,
-          "max_us": 0,
-          "std_us": 0.03588702812826367
-        },
-        "ads_root_expand": {
-          "mean_us": 0.194,
-          "min_us": 0,
-          "max_us": 0,
-          "std_us": 0.027779797906341427
-        }
-      },
-      "mmr_verify_stats": {
-        "mean_us": 2.142,
-        "min_us": 2,
-        "max_us": 3,
-        "std_us": 0.1296303992281147
-      }
-    },
-    {
-      "chain_length": 1500,
-      "log2_n": 10.550746785383243,
-      "test_block_height": 750,
-      "actual_mmr_proof_items": 11,
-      "schemes": [
-        {
-          "scheme_name": "HeaderChain",
-          "chain_verify_time_us": 327.436,
-          "block_verify_time_us": 0.0,
-          "total_verify_time_us": 327.436,
-          "speedup_vs_header_chain": 1.0
-        },
-        {
-          "scheme_name": "Merkle",
-          "chain_verify_time_us": 2.046,
-          "block_verify_time_us": 0.436,
-          "total_verify_time_us": 2.4819999999999998,
-          "speedup_vs_header_chain": 131.9242546333602
-        },
-        {
-          "scheme_name": "MMR-Scattered",
-          "chain_verify_time_us": 2.466,
-          "block_verify_time_us": 0.436,
-          "total_verify_time_us": 2.902,
-          "speedup_vs_header_chain": 112.83115093039282
-        },
-        {
-          "scheme_name": "Two-Layer",
-          "chain_verify_time_us": 2.301,
-          "block_verify_time_us": 0.208,
-          "total_verify_time_us": 2.5090000000000003,
-          "speedup_vs_header_chain": 130.50458349940212
-        }
-      ],
-      "two_layer_breakdown": {
-        "layer1_mmr_verify": {
-          "mean_us": 2.301,
-          "min_us": 2,
-          "max_us": 2,
-          "std_us": 0.03891197006245525
-        },
-        "layer2_ads_root_expand": {
-          "mean_us": 0.208,
-          "min_us": 0,
-          "max_us": 0,
-          "std_us": 0.04187523556393866
-        },
-        "total": {
-          "mean_us": 2.673,
-          "min_us": 2,
-          "max_us": 7,
-          "std_us": 0.4898680506735534
-        },
-        "layer2_overhead_percent": 7.781518892630003
-      },
-      "measured_base_times": {
-        "single_hash": {
-          "mean_us": 0.186,
-          "min_us": 0,
-          "max_us": 0,
-          "std_us": 0.04268749491621899
-        },
-        "header_hash_scattered": {
-          "mean_us": 0.436,
-          "min_us": 0,
-          "max_us": 8,
-          "std_us": 0.9579565794339575
-        },
-        "header_hash_unified": {
-          "mean_us": 0.264,
-          "min_us": 0,
-          "max_us": 7,
-          "std_us": 0.701444397243461
-        },
-        "ads_root_expand": {
-          "mean_us": 0.188,
-          "min_us": 0,
-          "max_us": 0,
-          "std_us": 0.032659863237109045
-        }
-      },
-      "mmr_verify_stats": {
-        "mean_us": 2.466,
-        "min_us": 2,
-        "max_us": 16,
-        "std_us": 1.3817146425855642
-      }
-    },
-    {
-      "chain_length": 2000,
-      "log2_n": 10.965784284662087,
-      "test_block_height": 1000,
-      "actual_mmr_proof_items": 11,
-      "schemes": [
-        {
-          "scheme_name": "HeaderChain",
-          "chain_verify_time_us": 329.329,
-          "block_verify_time_us": 0.0,
-          "total_verify_time_us": 329.329,
-          "speedup_vs_header_chain": 1.0
-        },
-        {
-          "scheme_name": "Merkle",
-          "chain_verify_time_us": 2.024,
-          "block_verify_time_us": 0.329,
-          "total_verify_time_us": 2.353,
-          "speedup_vs_header_chain": 139.9613259668508
-        },
-        {
-          "scheme_name": "MMR-Scattered",
-          "chain_verify_time_us": 2.326,
-          "block_verify_time_us": 0.329,
-          "total_verify_time_us": 2.6550000000000002,
-          "speedup_vs_header_chain": 124.04105461393596
-        },
-        {
-          "scheme_name": "Two-Layer",
-          "chain_verify_time_us": 2.325,
-          "block_verify_time_us": 0.211,
-          "total_verify_time_us": 2.536,
-          "speedup_vs_header_chain": 129.86159305993692
-        }
-      ],
-      "two_layer_breakdown": {
-        "layer1_mmr_verify": {
-          "mean_us": 2.325,
-          "min_us": 2,
-          "max_us": 3,
-          "std_us": 0.22355032425551852
-        },
-        "layer2_ads_root_expand": {
-          "mean_us": 0.211,
-          "min_us": 0,
-          "max_us": 0,
-          "std_us": 0.031446603773522014
-        },
-        "total": {
-          "mean_us": 2.645,
-          "min_us": 2,
-          "max_us": 4,
-          "std_us": 0.21385117075275326
-        },
-        "layer2_overhead_percent": 7.977315689981096
-      },
-      "measured_base_times": {
-        "single_hash": {
-          "mean_us": 0.184,
-          "min_us": 0,
-          "max_us": 0,
-          "std_us": 0.0506921785850339
-        },
-        "header_hash_scattered": {
-          "mean_us": 0.329,
-          "min_us": 0,
-          "max_us": 2,
-          "std_us": 0.20115575150523626
-        },
-        "header_hash_unified": {
-          "mean_us": 0.19,
-          "min_us": 0,
-          "max_us": 0,
-          "std_us": 0.03015113445777636
-        },
-        "ads_root_expand": {
-          "mean_us": 0.191,
-          "min_us": 0,
-          "max_us": 0,
-          "std_us": 0.028762349126466132
-        }
-      },
-      "mmr_verify_stats": {
-        "mean_us": 2.326,
-        "min_us": 2,
-        "max_us": 3,
-        "std_us": 0.20231987873991358
-      }
-    },
-    {
-      "chain_length": 2500,
-      "log2_n": 11.287712379549449,
-      "test_block_height": 1250,
-      "actual_mmr_proof_items": 12,
-      "schemes": [
-        {
-          "scheme_name": "HeaderChain",
-          "chain_verify_time_us": 379.053,
-          "block_verify_time_us": 0.0,
-          "total_verify_time_us": 379.053,
-          "speedup_vs_header_chain": 1.0
-        },
-        {
-          "scheme_name": "Merkle",
-          "chain_verify_time_us": 2.1719999999999997,
-          "block_verify_time_us": 0.303,
-          "total_verify_time_us": 2.4749999999999996,
-          "speedup_vs_header_chain": 153.1527272727273
-        },
-        {
-          "scheme_name": "MMR-Scattered",
-          "chain_verify_time_us": 2.479,
-          "block_verify_time_us": 0.303,
-          "total_verify_time_us": 2.782,
-          "speedup_vs_header_chain": 136.25197699496763
-        },
-        {
-          "scheme_name": "Two-Layer",
-          "chain_verify_time_us": 2.475,
-          "block_verify_time_us": 0.206,
-          "total_verify_time_us": 2.681,
-          "speedup_vs_header_chain": 141.38493099589704
-        }
-      ],
-      "two_layer_breakdown": {
-        "layer1_mmr_verify": {
-          "mean_us": 2.475,
-          "min_us": 2,
-          "max_us": 2,
-          "std_us": 0.05
-        },
-        "layer2_ads_root_expand": {
-          "mean_us": 0.206,
-          "min_us": 0,
-          "max_us": 0,
-          "std_us": 0.027779797906341427
-        },
-        "total": {
-          "mean_us": 2.786,
-          "min_us": 2,
-          "max_us": 3,
-          "std_us": 0.055084874823706685
-        },
-        "layer2_overhead_percent": 7.3941134242641775
-      },
-      "measured_base_times": {
-        "single_hash": {
-          "mean_us": 0.181,
-          "min_us": 0,
-          "max_us": 0,
-          "std_us": 0.05259911279353167
-        },
-        "header_hash_scattered": {
-          "mean_us": 0.303,
-          "min_us": 0,
-          "max_us": 0,
-          "std_us": 0.01714466079977653
-        },
-        "header_hash_unified": {
-          "mean_us": 0.195,
-          "min_us": 0,
-          "max_us": 0,
-          "std_us": 0.021904291355759033
-        },
-        "ads_root_expand": {
-          "mean_us": 0.196,
-          "min_us": 0,
-          "max_us": 0,
-          "std_us": 0.024287836253956217
-        }
-      },
-      "mmr_verify_stats": {
-        "mean_us": 2.479,
-        "min_us": 2,
-        "max_us": 3,
-        "std_us": 0.09979271445644645
-      }
-    },
-    {
-      "chain_length": 3000,
-      "log2_n": 11.550746785383243,
-      "test_block_height": 1500,
-      "actual_mmr_proof_items": 12,
-      "schemes": [
-        {
-          "scheme_name": "HeaderChain",
-          "chain_verify_time_us": 457.805,
-          "block_verify_time_us": 0.0,
-          "total_verify_time_us": 457.805,
-          "speedup_vs_header_chain": 1.0
-        },
-        {
-          "scheme_name": "Merkle",
-          "chain_verify_time_us": 2.1719999999999997,
-          "block_verify_time_us": 0.305,
-          "total_verify_time_us": 2.477,
-          "speedup_vs_header_chain": 184.82236576503837
-        },
-        {
-          "scheme_name": "MMR-Scattered",
-          "chain_verify_time_us": 2.478,
-          "block_verify_time_us": 0.305,
-          "total_verify_time_us": 2.7830000000000004,
-          "speedup_vs_header_chain": 164.50053898670498
-        },
-        {
-          "scheme_name": "Two-Layer",
-          "chain_verify_time_us": 2.621,
-          "block_verify_time_us": 0.211,
-          "total_verify_time_us": 2.832,
-          "speedup_vs_header_chain": 161.65430790960454
-        }
-      ],
-      "two_layer_breakdown": {
-        "layer1_mmr_verify": {
-          "mean_us": 2.621,
-          "min_us": 2,
-          "max_us": 13,
-          "std_us": 1.0906670185966685
-        },
-        "layer2_ads_root_expand": {
-          "mean_us": 0.211,
-          "min_us": 0,
-          "max_us": 0,
-          "std_us": 0.031446603773522014
-        },
-        "total": {
-          "mean_us": 2.934,
-          "min_us": 2,
-          "max_us": 14,
-          "std_us": 1.1397518780130802
-        },
-        "layer2_overhead_percent": 7.191547375596455
-      },
-      "measured_base_times": {
-        "single_hash": {
-          "mean_us": 0.181,
-          "min_us": 0,
-          "max_us": 0,
-          "std_us": 0.046482319871173176
-        },
-        "header_hash_scattered": {
-          "mean_us": 0.305,
-          "min_us": 0,
-          "max_us": 0,
-          "std_us": 0.021904291355759033
-        },
-        "header_hash_unified": {
-          "mean_us": 0.318,
-          "min_us": 0,
-          "max_us": 13,
-          "std_us": 1.2814433150541502
-        },
-        "ads_root_expand": {
-          "mean_us": 0.192,
-          "min_us": 0,
-          "max_us": 0,
-          "std_us": 0.027265992434429072
-        }
-      },
-      "mmr_verify_stats": {
-        "mean_us": 2.478,
-        "min_us": 2,
-        "max_us": 3,
-        "std_us": 0.11062722919057423
-      }
-    },
-    {
-      "chain_length": 4000,
-      "log2_n": 11.965784284662087,
-      "test_block_height": 2000,
-      "actual_mmr_proof_items": 12,
-      "schemes": [
-        {
-          "scheme_name": "HeaderChain",
-          "chain_verify_time_us": 606.303,
-          "block_verify_time_us": 0.0,
-          "total_verify_time_us": 606.303,
-          "speedup_vs_header_chain": 1.0
-        },
-        {
-          "scheme_name": "Merkle",
-          "chain_verify_time_us": 2.2560000000000002,
-          "block_verify_time_us": 0.303,
-          "total_verify_time_us": 2.559,
-          "speedup_vs_header_chain": 236.92966002344664
-        },
-        {
-          "scheme_name": "MMR-Scattered",
-          "chain_verify_time_us": 2.523,
-          "block_verify_time_us": 0.303,
-          "total_verify_time_us": 2.826,
-          "speedup_vs_header_chain": 214.54458598726114
-        },
-        {
-          "scheme_name": "Two-Layer",
-          "chain_verify_time_us": 2.765,
-          "block_verify_time_us": 0.218,
-          "total_verify_time_us": 2.983,
-          "speedup_vs_header_chain": 203.25276567214212
-        }
-      ],
-      "two_layer_breakdown": {
-        "layer1_mmr_verify": {
-          "mean_us": 2.765,
-          "min_us": 2,
-          "max_us": 26,
-          "std_us": 2.4432704940449606
-        },
-        "layer2_ads_root_expand": {
-          "mean_us": 0.218,
-          "min_us": 0,
-          "max_us": 0,
-          "std_us": 0.03861229196653691
-        },
-        "total": {
-          "mean_us": 3.105,
-          "min_us": 2,
-          "max_us": 27,
-          "std_us": 2.4895082878254327
-        },
-        "layer2_overhead_percent": 7.020933977455717
-      },
-      "measured_base_times": {
-        "single_hash": {
-          "mean_us": 0.188,
-          "min_us": 0,
-          "max_us": 1,
-          "std_us": 0.10078479923865383
-        },
-        "header_hash_scattered": {
-          "mean_us": 0.303,
-          "min_us": 0,
-          "max_us": 0,
-          "std_us": 0.01714466079977653
-        },
-        "header_hash_unified": {
-          "mean_us": 0.186,
-          "min_us": 0,
-          "max_us": 0,
-          "std_us": 0.0348735088019777
-        },
-        "ads_root_expand": {
-          "mean_us": 0.191,
-          "min_us": 0,
-          "max_us": 0,
-          "std_us": 0.028762349126466132
-        }
-      },
-      "mmr_verify_stats": {
-        "mean_us": 2.523,
-        "min_us": 2,
-        "max_us": 4,
-        "std_us": 0.1704746789456316
-      }
-    },
-    {
-      "chain_length": 5000,
-      "log2_n": 12.287712379549449,
-      "test_block_height": 2500,
-      "actual_mmr_proof_items": 13,
-      "schemes": [
-        {
-          "scheme_name": "HeaderChain",
-          "chain_verify_time_us": 770.308,
-          "block_verify_time_us": 0.0,
-          "total_verify_time_us": 770.308,
-          "speedup_vs_header_chain": 1.0
-        },
-        {
-          "scheme_name": "Merkle",
-          "chain_verify_time_us": 2.34,
-          "block_verify_time_us": 0.308,
-          "total_verify_time_us": 2.6479999999999997,
-          "speedup_vs_header_chain": 290.9018126888218
-        },
-        {
-          "scheme_name": "MMR-Scattered",
-          "chain_verify_time_us": 2.666,
-          "block_verify_time_us": 0.308,
-          "total_verify_time_us": 2.9739999999999998,
-          "speedup_vs_header_chain": 259.01412239408205
-        },
-        {
-          "scheme_name": "Two-Layer",
-          "chain_verify_time_us": 2.659,
-          "block_verify_time_us": 0.208,
-          "total_verify_time_us": 2.867,
-          "speedup_vs_header_chain": 268.6808510638298
-        }
-      ],
-      "two_layer_breakdown": {
-        "layer1_mmr_verify": {
-          "mean_us": 2.659,
-          "min_us": 2,
-          "max_us": 2,
-          "std_us": 0.051433982399329586
-        },
-        "layer2_ads_root_expand": {
-          "mean_us": 0.208,
-          "min_us": 0,
-          "max_us": 0,
-          "std_us": 0.030748244591432296
-        },
-        "total": {
-          "mean_us": 2.977,
-          "min_us": 2,
-          "max_us": 3,
-          "std_us": 0.05096047190685833
-        },
-        "layer2_overhead_percent": 6.986899563318777
-      },
-      "measured_base_times": {
-        "single_hash": {
-          "mean_us": 0.18,
-          "min_us": 0,
-          "max_us": 0,
-          "std_us": 0.04714045207910317
-        },
-        "header_hash_scattered": {
-          "mean_us": 0.308,
-          "min_us": 0,
-          "max_us": 0,
-          "std_us": 0.027265992434429072
-        },
-        "header_hash_unified": {
-          "mean_us": 0.19,
-          "min_us": 0,
-          "max_us": 0,
-          "std_us": 0.03015113445777636
-        },
-        "ads_root_expand": {
-          "mean_us": 0.238,
-          "min_us": 0,
-          "max_us": 5,
-          "std_us": 0.4921156142389487
-        }
-      },
-      "mmr_verify_stats": {
-        "mean_us": 2.666,
-        "min_us": 2,
-        "max_us": 3,
-        "std_us": 0.11994948431685226
-      }
-    },
-    {
-      "chain_length": 6000,
-      "log2_n": 12.550746785383243,
-      "test_block_height": 3000,
-      "actual_mmr_proof_items": 13,
-      "schemes": [
-        {
-          "scheme_name": "HeaderChain",
-          "chain_verify_time_us": 927.309,
-          "block_verify_time_us": 0.0,
-          "total_verify_time_us": 927.309,
-          "speedup_vs_header_chain": 1.0
-        },
-        {
-          "scheme_name": "Merkle",
-          "chain_verify_time_us": 2.392,
-          "block_verify_time_us": 0.309,
-          "total_verify_time_us": 2.701,
-          "speedup_vs_header_chain": 343.32062199185486
-        },
-        {
-          "scheme_name": "MMR-Scattered",
-          "chain_verify_time_us": 2.69,
-          "block_verify_time_us": 0.309,
-          "total_verify_time_us": 2.999,
-          "speedup_vs_header_chain": 309.20606868956315
-        },
-        {
-          "scheme_name": "Two-Layer",
-          "chain_verify_time_us": 2.912,
-          "block_verify_time_us": 0.207,
-          "total_verify_time_us": 3.1189999999999998,
-          "speedup_vs_header_chain": 297.30971465213213
-        }
-      ],
-      "two_layer_breakdown": {
-        "layer1_mmr_verify": {
-          "mean_us": 2.912,
-          "min_us": 2,
-          "max_us": 25,
-          "std_us": 2.2962103166264667
-        },
-        "layer2_ads_root_expand": {
-          "mean_us": 0.207,
-          "min_us": 0,
-          "max_us": 0,
-          "std_us": 0.03554766326548573
-        },
-        "total": {
-          "mean_us": 3.235,
-          "min_us": 2,
-          "max_us": 26,
-          "std_us": 2.3339555447455473
-        },
-        "layer2_overhead_percent": 6.398763523956723
-      },
-      "measured_base_times": {
-        "single_hash": {
-          "mean_us": 0.184,
-          "min_us": 0,
-          "max_us": 0,
-          "std_us": 0.04431293675255978
-        },
-        "header_hash_scattered": {
-          "mean_us": 0.309,
-          "min_us": 0,
-          "max_us": 0,
-          "std_us": 0.028762349126466132
-        },
-        "header_hash_unified": {
-          "mean_us": 0.188,
-          "min_us": 0,
-          "max_us": 0,
-          "std_us": 0.032659863237109045
-        },
-        "ads_root_expand": {
-          "mean_us": 0.191,
-          "min_us": 0,
-          "max_us": 0,
-          "std_us": 0.032082595426382345
-        }
-      },
-      "mmr_verify_stats": {
-        "mean_us": 2.69,
-        "min_us": 2,
-        "max_us": 3,
-        "std_us": 0.10683698523517693
-      }
-    },
-    {
-      "chain_length": 7000,
-      "log2_n": 12.77313920671969,
-      "test_block_height": 3500,
-      "actual_mmr_proof_items": 13,
-      "schemes": [
-        {
-          "scheme_name": "HeaderChain",
-          "chain_verify_time_us": 1060.8029999999999,
-          "block_verify_time_us": 0.0,
-          "total_verify_time_us": 1060.8029999999999,
-          "speedup_vs_header_chain": 1.0
-        },
-        {
-          "scheme_name": "Merkle",
-          "chain_verify_time_us": 2.379,
-          "block_verify_time_us": 0.303,
-          "total_verify_time_us": 2.682,
-          "speedup_vs_header_chain": 395.52684563758385
-        },
-        {
-          "scheme_name": "MMR-Scattered",
-          "chain_verify_time_us": 2.666,
-          "block_verify_time_us": 0.303,
-          "total_verify_time_us": 2.969,
-          "speedup_vs_header_chain": 357.29302795554054
-        },
-        {
-          "scheme_name": "Two-Layer",
-          "chain_verify_time_us": 2.65,
-          "block_verify_time_us": 0.215,
-          "total_verify_time_us": 2.8649999999999998,
-          "speedup_vs_header_chain": 370.2628272251309
-        }
-      ],
-      "two_layer_breakdown": {
-        "layer1_mmr_verify": {
-          "mean_us": 2.65,
-          "min_us": 2,
-          "max_us": 2,
-          "std_us": 0.05222329678670935
-        },
-        "layer2_ads_root_expand": {
-          "mean_us": 0.215,
-          "min_us": 0,
-          "max_us": 0,
-          "std_us": 0.03588702812826367
-        },
-        "total": {
-          "mean_us": 2.974,
-          "min_us": 2,
-          "max_us": 3,
-          "std_us": 0.05049252369900864
-        },
-        "layer2_overhead_percent": 7.229320780094149
-      },
-      "measured_base_times": {
-        "single_hash": {
-          "mean_us": 0.183,
-          "min_us": 0,
-          "max_us": 0,
-          "std_us": 0.045070091316893636
-        },
-        "header_hash_scattered": {
-          "mean_us": 0.303,
-          "min_us": 0,
-          "max_us": 0,
-          "std_us": 0.01714466079977653
-        },
-        "header_hash_unified": {
-          "mean_us": 0.189,
-          "min_us": 0,
-          "max_us": 0,
-          "std_us": 0.031446603773522014
-        },
-        "ads_root_expand": {
-          "mean_us": 0.195,
-          "min_us": 0,
-          "max_us": 0,
-          "std_us": 0.026111648393354676
-        }
-      },
-      "mmr_verify_stats": {
-        "mean_us": 2.666,
-        "min_us": 2,
-        "max_us": 3,
-        "std_us": 0.11121005695384194
-      }
-    },
-    {
-      "chain_length": 8000,
-      "log2_n": 12.965784284662087,
-      "test_block_height": 4000,
-      "actual_mmr_proof_items": 13,
-      "schemes": [
-        {
-          "scheme_name": "HeaderChain",
-          "chain_verify_time_us": 1232.308,
-          "block_verify_time_us": 0.0,
-          "total_verify_time_us": 1232.308,
-          "speedup_vs_header_chain": 1.0
-        },
-        {
-          "scheme_name": "Merkle",
-          "chain_verify_time_us": 2.444,
-          "block_verify_time_us": 0.308,
-          "total_verify_time_us": 2.752,
-          "speedup_vs_header_chain": 447.78633720930236
-        },
-        {
-          "scheme_name": "MMR-Scattered",
-          "chain_verify_time_us": 2.676,
-          "block_verify_time_us": 0.308,
-          "total_verify_time_us": 2.984,
-          "speedup_vs_header_chain": 412.97184986595175
-        },
-        {
-          "scheme_name": "Two-Layer",
-          "chain_verify_time_us": 2.667,
-          "block_verify_time_us": 0.207,
-          "total_verify_time_us": 2.8739999999999997,
-          "speedup_vs_header_chain": 428.7780097425192
-        }
-      ],
-      "two_layer_breakdown": {
-        "layer1_mmr_verify": {
-          "mean_us": 2.667,
-          "min_us": 2,
-          "max_us": 2,
-          "std_us": 0.055149017592466154
-        },
-        "layer2_ads_root_expand": {
-          "mean_us": 0.207,
-          "min_us": 0,
-          "max_us": 0,
-          "std_us": 0.025643239997624277
-        },
-        "total": {
-          "mean_us": 2.975,
-          "min_us": 2,
-          "max_us": 3,
-          "std_us": 0.06415731927193978
-        },
-        "layer2_overhead_percent": 6.95798319327731
-      },
-      "measured_base_times": {
-        "single_hash": {
-          "mean_us": 0.188,
-          "min_us": 0,
-          "max_us": 1,
-          "std_us": 0.12
-        },
-        "header_hash_scattered": {
-          "mean_us": 0.308,
-          "min_us": 0,
-          "max_us": 0,
-          "std_us": 0.027265992434429072
-        },
-        "header_hash_unified": {
-          "mean_us": 0.193,
-          "min_us": 0,
-          "max_us": 0,
-          "std_us": 0.02931886695621029
-        },
-        "ads_root_expand": {
-          "mean_us": 0.191,
-          "min_us": 0,
-          "max_us": 0,
-          "std_us": 0.028762349126466132
-        }
-      },
-      "mmr_verify_stats": {
-        "mean_us": 2.676,
-        "min_us": 2,
-        "max_us": 4,
-        "std_us": 0.1753034886455861
-      }
-    },
-    {
-      "chain_length": 9000,
-      "log2_n": 13.1357092861044,
-      "test_block_height": 4500,
-      "actual_mmr_proof_items": 14,
-      "schemes": [
-        {
-          "scheme_name": "HeaderChain",
-          "chain_verify_time_us": 2318.015,
-          "block_verify_time_us": 0.0,
-          "total_verify_time_us": 2318.015,
-          "speedup_vs_header_chain": 1.0
-        },
-        {
-          "scheme_name": "Merkle",
-          "chain_verify_time_us": 4.368,
-          "block_verify_time_us": 0.515,
-          "total_verify_time_us": 4.883,
-          "speedup_vs_header_chain": 474.7112430882654
-        },
-        {
-          "scheme_name": "MMR-Scattered",
-          "chain_verify_time_us": 3.205,
-          "block_verify_time_us": 0.515,
-          "total_verify_time_us": 3.72,
-          "speedup_vs_header_chain": 623.1223118279569
-        },
-        {
-          "scheme_name": "Two-Layer",
-          "chain_verify_time_us": 2.842,
-          "block_verify_time_us": 0.217,
-          "total_verify_time_us": 3.059,
-          "speedup_vs_header_chain": 757.7688787185353
-        }
-      ],
-      "two_layer_breakdown": {
-        "layer1_mmr_verify": {
-          "mean_us": 2.842,
-          "min_us": 2,
-          "max_us": 2,
-          "std_us": 0.04960449637488582
-        },
-        "layer2_ads_root_expand": {
-          "mean_us": 0.217,
-          "min_us": 0,
-          "max_us": 0,
-          "std_us": 0.040339468604243256
-        },
-        "total": {
-          "mean_us": 3.163,
-          "min_us": 3,
-          "max_us": 3,
-          "std_us": 0.052522241560941194
-        },
-        "layer2_overhead_percent": 6.860575403098325
-      },
-      "measured_base_times": {
-        "single_hash": {
-          "mean_us": 0.312,
-          "min_us": 0,
-          "max_us": 0,
-          "std_us": 0.040898988651643604
-        },
-        "header_hash_scattered": {
-          "mean_us": 0.515,
-          "min_us": 0,
-          "max_us": 0,
-          "std_us": 0.03588702812826367
-        },
-        "header_hash_unified": {
-          "mean_us": 0.317,
-          "min_us": 0,
-          "max_us": 0,
-          "std_us": 0.03775251680686369
-        },
-        "ads_root_expand": {
-          "mean_us": 0.325,
-          "min_us": 0,
-          "max_us": 0,
-          "std_us": 0.04351941398892446
-        }
-      },
-      "mmr_verify_stats": {
-        "mean_us": 3.205,
-        "min_us": 2,
-        "max_us": 6,
-        "std_us": 0.7951081496859215
-      }
-    },
-    {
-      "chain_length": 10000,
-      "log2_n": 13.287712379549449,
-      "test_block_height": 5000,
-      "actual_mmr_proof_items": 14,
-      "schemes": [
-        {
-          "scheme_name": "HeaderChain",
-          "chain_verify_time_us": 1530.306,
-          "block_verify_time_us": 0.0,
-          "total_verify_time_us": 1530.306,
-          "speedup_vs_header_chain": 1.0
-        },
-        {
-          "scheme_name": "Merkle",
-          "chain_verify_time_us": 2.576,
-          "block_verify_time_us": 0.306,
-          "total_verify_time_us": 2.882,
-          "speedup_vs_header_chain": 530.9875086745316
-        },
-        {
-          "scheme_name": "MMR-Scattered",
-          "chain_verify_time_us": 2.844,
-          "block_verify_time_us": 0.306,
-          "total_verify_time_us": 3.15,
-          "speedup_vs_header_chain": 485.8114285714286
-        },
-        {
-          "scheme_name": "Two-Layer",
-          "chain_verify_time_us": 2.841,
-          "block_verify_time_us": 0.215,
-          "total_verify_time_us": 3.056,
-          "speedup_vs_header_chain": 500.75458115183244
-        }
-      ],
-      "two_layer_breakdown": {
-        "layer1_mmr_verify": {
-          "mean_us": 2.841,
-          "min_us": 2,
-          "max_us": 3,
-          "std_us": 0.051433982399329586
-        },
-        "layer2_ads_root_expand": {
-          "mean_us": 0.215,
-          "min_us": 0,
-          "max_us": 0,
-          "std_us": 0.03859920970562726
-        },
-        "total": {
-          "mean_us": 3.165,
-          "min_us": 3,
-          "max_us": 3,
-          "std_us": 0.055732042902271274
-        },
-        "layer2_overhead_percent": 6.79304897314376
-      },
-      "measured_base_times": {
-        "single_hash": {
-          "mean_us": 0.184,
-          "min_us": 0,
-          "max_us": 0,
-          "std_us": 0.0506921785850339
-        },
-        "header_hash_scattered": {
-          "mean_us": 0.306,
-          "min_us": 0,
-          "max_us": 0,
-          "std_us": 0.0238683256575942
-        },
-        "header_hash_unified": {
-          "mean_us": 0.192,
-          "min_us": 0,
-          "max_us": 0,
-          "std_us": 0.030748244591432296
-        },
-        "ads_root_expand": {
-          "mean_us": 0.185,
-          "min_us": 0,
-          "max_us": 0,
-          "std_us": 0.03588702812826367
-        }
-      },
-      "mmr_verify_stats": {
-        "mean_us": 2.844,
-        "min_us": 2,
-        "max_us": 3,
-        "std_us": 0.10082488068753945
-      }
-    },
-    {
-      "chain_length": 12000,
-      "log2_n": 13.550746785383243,
-      "test_block_height": 6000,
-      "actual_mmr_proof_items": 14,
-      "schemes": [
-        {
-          "scheme_name": "HeaderChain",
-          "chain_verify_time_us": 1830.305,
-          "block_verify_time_us": 0.0,
-          "total_verify_time_us": 1830.305,
-          "speedup_vs_header_chain": 1.0
-        },
-        {
-          "scheme_name": "Merkle",
-          "chain_verify_time_us": 2.702,
-          "block_verify_time_us": 0.305,
-          "total_verify_time_us": 3.007,
-          "speedup_vs_header_chain": 608.6814100432324
-        },
-        {
-          "scheme_name": "MMR-Scattered",
-          "chain_verify_time_us": 2.9,
-          "block_verify_time_us": 0.305,
-          "total_verify_time_us": 3.205,
-          "speedup_vs_header_chain": 571.0780031201248
-        },
-        {
-          "scheme_name": "Two-Layer",
-          "chain_verify_time_us": 2.885,
-          "block_verify_time_us": 0.218,
-          "total_verify_time_us": 3.1029999999999998,
-          "speedup_vs_header_chain": 589.8501450209476
-        }
-      ],
-      "two_layer_breakdown": {
-        "layer1_mmr_verify": {
-          "mean_us": 2.885,
-          "min_us": 2,
-          "max_us": 4,
-          "std_us": 0.2337118142525365
-        },
-        "layer2_ads_root_expand": {
-          "mean_us": 0.218,
-          "min_us": 0,
-          "max_us": 0,
-          "std_us": 0.03861229196653691
-        },
-        "total": {
-          "mean_us": 3.21,
-          "min_us": 3,
-          "max_us": 4,
-          "std_us": 0.24141836774120623
-        },
-        "layer2_overhead_percent": 6.7912772585669785
-      },
-      "measured_base_times": {
-        "single_hash": {
-          "mean_us": 0.193,
-          "min_us": 0,
-          "max_us": 1,
-          "std_us": 0.12812162781962894
-        },
-        "header_hash_scattered": {
-          "mean_us": 0.305,
-          "min_us": 0,
-          "max_us": 0,
-          "std_us": 0.021904291355759033
-        },
-        "header_hash_unified": {
-          "mean_us": 0.189,
-          "min_us": 0,
-          "max_us": 0,
-          "std_us": 0.031446603773522014
-        },
-        "ads_root_expand": {
-          "mean_us": 0.193,
-          "min_us": 0,
-          "max_us": 0,
-          "std_us": 0.025643239997624277
-        }
-      },
-      "mmr_verify_stats": {
-        "mean_us": 2.9,
-        "min_us": 2,
-        "max_us": 5,
-        "std_us": 0.3231786571610886
-      }
-    },
-    {
-      "chain_length": 14000,
-      "log2_n": 13.77313920671969,
-      "test_block_height": 7000,
-      "actual_mmr_proof_items": 14,
-      "schemes": [
-        {
-          "scheme_name": "HeaderChain",
-          "chain_verify_time_us": 2156.308,
-          "block_verify_time_us": 0.0,
-          "total_verify_time_us": 2156.308,
-          "speedup_vs_header_chain": 1.0
-        },
-        {
-          "scheme_name": "Merkle",
-          "chain_verify_time_us": 2.548,
-          "block_verify_time_us": 0.308,
-          "total_verify_time_us": 2.856,
-          "speedup_vs_header_chain": 755.0098039215686
-        },
-        {
-          "scheme_name": "MMR-Scattered",
-          "chain_verify_time_us": 2.843,
-          "block_verify_time_us": 0.308,
-          "total_verify_time_us": 3.151,
-          "speedup_vs_header_chain": 684.3249761980325
-        },
-        {
-          "scheme_name": "Two-Layer",
-          "chain_verify_time_us": 2.821,
-          "block_verify_time_us": 0.21,
-          "total_verify_time_us": 3.031,
-          "speedup_vs_header_chain": 711.4180138568129
-        }
-      ],
-      "two_layer_breakdown": {
-        "layer1_mmr_verify": {
-          "mean_us": 2.821,
-          "min_us": 2,
-          "max_us": 2,
-          "std_us": 0.040936018074033236
-        },
-        "layer2_ads_root_expand": {
-          "mean_us": 0.21,
-          "min_us": 0,
-          "max_us": 0,
-          "std_us": 0.03623715376697393
-        },
-        "total": {
-          "mean_us": 3.131,
-          "min_us": 3,
-          "max_us": 3,
-          "std_us": 0.048606854070452475
-        },
-        "layer2_overhead_percent": 6.707122325135739
-      },
-      "measured_base_times": {
-        "single_hash": {
-          "mean_us": 0.182,
-          "min_us": 0,
-          "max_us": 0,
-          "std_us": 0.05199067515459194
-        },
-        "header_hash_scattered": {
-          "mean_us": 0.308,
-          "min_us": 0,
-          "max_us": 0,
-          "std_us": 0.027265992434429072
-        },
-        "header_hash_unified": {
-          "mean_us": 0.194,
-          "min_us": 0,
-          "max_us": 0,
-          "std_us": 0.0238683256575942
-        },
-        "ads_root_expand": {
-          "mean_us": 0.19,
-          "min_us": 0,
-          "max_us": 0,
-          "std_us": 0.03015113445777636
-        }
-      },
-      "mmr_verify_stats": {
-        "mean_us": 2.843,
-        "min_us": 2,
-        "max_us": 3,
-        "std_us": 0.10075974023649154
-      }
-    },
-    {
-      "chain_length": 16000,
-      "log2_n": 13.965784284662087,
-      "test_block_height": 8000,
-      "actual_mmr_proof_items": 14,
-      "schemes": [
-        {
-          "scheme_name": "HeaderChain",
-          "chain_verify_time_us": 2432.304,
-          "block_verify_time_us": 0.0,
-          "total_verify_time_us": 2432.304,
-          "speedup_vs_header_chain": 1.0
-        },
-        {
-          "scheme_name": "Merkle",
-          "chain_verify_time_us": 2.534,
-          "block_verify_time_us": 0.304,
-          "total_verify_time_us": 2.8379999999999996,
-          "speedup_vs_header_chain": 857.048625792812
-        },
-        {
-          "scheme_name": "MMR-Scattered",
-          "chain_verify_time_us": 2.871,
-          "block_verify_time_us": 0.304,
-          "total_verify_time_us": 3.175,
-          "speedup_vs_header_chain": 766.08
-        },
-        {
-          "scheme_name": "Two-Layer",
-          "chain_verify_time_us": 2.859,
-          "block_verify_time_us": 0.211,
-          "total_verify_time_us": 3.07,
-          "speedup_vs_header_chain": 792.2814332247558
-        }
-      ],
-      "two_layer_breakdown": {
-        "layer1_mmr_verify": {
-          "mean_us": 2.859,
-          "min_us": 2,
-          "max_us": 2,
-          "std_us": 0.04943110704237104
-        },
-        "layer2_ads_root_expand": {
-          "mean_us": 0.211,
-          "min_us": 0,
-          "max_us": 0,
-          "std_us": 0.031446603773522014
-        },
-        "total": {
-          "mean_us": 3.164,
-          "min_us": 3,
-          "max_us": 3,
-          "std_us": 0.05226196639347903
-        },
-        "layer2_overhead_percent": 6.668773704171933
-      },
-      "measured_base_times": {
-        "single_hash": {
-          "mean_us": 0.181,
-          "min_us": 0,
-          "max_us": 0,
-          "std_us": 0.046482319871173176
-        },
-        "header_hash_scattered": {
-          "mean_us": 0.304,
-          "min_us": 0,
-          "max_us": 0,
-          "std_us": 0.019694638556693237
-        },
-        "header_hash_unified": {
-          "mean_us": 0.192,
-          "min_us": 0,
-          "max_us": 0,
-          "std_us": 0.027265992434429072
-        },
-        "ads_root_expand": {
-          "mean_us": 0.195,
-          "min_us": 0,
-          "max_us": 0,
-          "std_us": 0.021904291355759033
-        }
-      },
-      "mmr_verify_stats": {
-        "mean_us": 2.871,
-        "min_us": 2,
-        "max_us": 4,
-        "std_us": 0.13874982937472446
-      }
-    },
-    {
-      "chain_length": 18000,
-      "log2_n": 14.1357092861044,
-      "test_block_height": 9000,
-      "actual_mmr_proof_items": 15,
-      "schemes": [
-        {
-          "scheme_name": "HeaderChain",
-          "chain_verify_time_us": 2754.306,
-          "block_verify_time_us": 0.0,
-          "total_verify_time_us": 2754.306,
-          "speedup_vs_header_chain": 1.0
-        },
-        {
-          "scheme_name": "Merkle",
-          "chain_verify_time_us": 2.6999999999999997,
-          "block_verify_time_us": 0.306,
-          "total_verify_time_us": 3.006,
-          "speedup_vs_header_chain": 916.2694610778444
-        },
-        {
-          "scheme_name": "MMR-Scattered",
-          "chain_verify_time_us": 3.229,
-          "block_verify_time_us": 0.306,
-          "total_verify_time_us": 3.535,
-          "speedup_vs_header_chain": 779.1530410183875
-        },
-        {
-          "scheme_name": "Two-Layer",
-          "chain_verify_time_us": 2.988,
-          "block_verify_time_us": 0.215,
-          "total_verify_time_us": 3.203,
-          "speedup_vs_header_chain": 859.9144551982517
-        }
-      ],
-      "two_layer_breakdown": {
-        "layer1_mmr_verify": {
-          "mean_us": 2.988,
-          "min_us": 2,
-          "max_us": 3,
-          "std_us": 0.043298354180586064
-        },
-        "layer2_ads_root_expand": {
-          "mean_us": 0.215,
-          "min_us": 0,
-          "max_us": 0,
-          "std_us": 0.03859920970562726
-        },
-        "total": {
-          "mean_us": 3.313,
-          "min_us": 3,
-          "max_us": 3,
-          "std_us": 0.052522241560941194
-        },
-        "layer2_overhead_percent": 6.489586477512828
-      },
-      "measured_base_times": {
-        "single_hash": {
-          "mean_us": 0.18,
-          "min_us": 0,
-          "max_us": 0,
-          "std_us": 0.06030226891555272
-        },
-        "header_hash_scattered": {
-          "mean_us": 0.306,
-          "min_us": 0,
-          "max_us": 0,
-          "std_us": 0.0238683256575942
-        },
-        "header_hash_unified": {
-          "mean_us": 0.188,
-          "min_us": 0,
-          "max_us": 0,
-          "std_us": 0.032659863237109045
-        },
-        "ads_root_expand": {
-          "mean_us": 0.194,
-          "min_us": 0,
-          "max_us": 0,
-          "std_us": 0.0238683256575942
-        }
-      },
-      "mmr_verify_stats": {
-        "mean_us": 3.229,
-        "min_us": 2,
-        "max_us": 24,
-        "std_us": 2.1050346094709957
-      }
-    },
-    {
-      "chain_length": 20000,
-      "log2_n": 14.287712379549449,
-      "test_block_height": 10000,
-      "actual_mmr_proof_items": 15,
-      "schemes": [
-        {
-          "scheme_name": "HeaderChain",
-          "chain_verify_time_us": 3060.306,
-          "block_verify_time_us": 0.0,
-          "total_verify_time_us": 3060.306,
-          "speedup_vs_header_chain": 1.0
-        },
-        {
-          "scheme_name": "Merkle",
-          "chain_verify_time_us": 2.73,
-          "block_verify_time_us": 0.306,
-          "total_verify_time_us": 3.036,
-          "speedup_vs_header_chain": 1008.005928853755
-        },
-        {
-          "scheme_name": "MMR-Scattered",
-          "chain_verify_time_us": 2.999,
-          "block_verify_time_us": 0.306,
-          "total_verify_time_us": 3.305,
-          "speedup_vs_header_chain": 925.9624810892586
-        },
-        {
-          "scheme_name": "Two-Layer",
-          "chain_verify_time_us": 2.983,
-          "block_verify_time_us": 0.214,
-          "total_verify_time_us": 3.197,
-          "speedup_vs_header_chain": 957.2430403503284
-        }
-      ],
-      "two_layer_breakdown": {
-        "layer1_mmr_verify": {
-          "mean_us": 2.983,
-          "min_us": 2,
-          "max_us": 3,
-          "std_us": 0.04934930126509934
-        },
-        "layer2_ads_root_expand": {
-          "mean_us": 0.214,
-          "min_us": 0,
-          "max_us": 0,
-          "std_us": 0.0348735088019777
-        },
-        "total": {
-          "mean_us": 3.297,
-          "min_us": 3,
-          "max_us": 3,
-          "std_us": 0.05213618530523515
-        },
-        "layer2_overhead_percent": 6.490749165908401
-      },
-      "measured_base_times": {
-        "single_hash": {
-          "mean_us": 0.182,
-          "min_us": 0,
-          "max_us": 0,
-          "std_us": 0.05199067515459194
-        },
-        "header_hash_scattered": {
-          "mean_us": 0.306,
-          "min_us": 0,
-          "max_us": 0,
-          "std_us": 0.0238683256575942
-        },
-        "header_hash_unified": {
-          "mean_us": 0.192,
-          "min_us": 0,
-          "max_us": 0,
-          "std_us": 0.027265992434429072
-        },
-        "ads_root_expand": {
-          "mean_us": 0.188,
-          "min_us": 0,
-          "max_us": 0,
-          "std_us": 0.032659863237109045
-        }
-      },
-      "mmr_verify_stats": {
-        "mean_us": 2.999,
-        "min_us": 2,
-        "max_us": 3,
-        "std_us": 0.10199524647271707
-      }
+    "summary": {
+        "avg_speedup_ratios": [
+            ["HeaderChain", 1.0],
+            ["Merkle", 368.00630959148805],
+            ["MMR-Scattered", 295.3150125277102],
+            ["Two-Layer", 311.55143660131324]
+        ],
+        "max_chain_verify_times": [
+            ["HeaderChain", 3000.2999999999997],
+            ["Merkle", 2.6999999999999997],
+            ["MMR-Scattered", 3.3017499999999997],
+            ["Two-Layer", 3.2025]
+        ],
+        "two_layer_overhead_analysis": {
+            "avg_layer2_overhead_us": 0.3500978260869566,
+            "avg_layer2_overhead_percent": 7.26953186326373,
+            "overhead_vs_mmr_scattered_percent": -4.22541267036366
+        },
+        "total_data_points": 23
     }
-  ],
-  "summary": {
-    "avg_speedup_ratios": [
-      [
-        "HeaderChain",
-        1.0
-      ],
-      [
-        "Merkle",
-        335.69972323587166
-      ],
-      [
-        "MMR-Scattered",
-        310.12105786839055
-      ],
-      [
-        "Two-Layer",
-        327.2786587811506
-      ]
-    ],
-    "max_chain_verify_times": [
-      [
-        "HeaderChain",
-        3060.306
-      ],
-      [
-        "Merkle",
-        3.036
-      ],
-      [
-        "MMR-Scattered",
-        3.305
-      ],
-      [
-        "Two-Layer",
-        3.197
-      ]
-    ],
-    "two_layer_overhead_analysis": {
-      "avg_layer2_overhead_us": 0.21047826086956523,
-      "avg_layer2_overhead_percent": 7.691217845828566,
-      "overhead_vs_mmr_scattered_percent": -7.198002511677699
-    },
-    "total_data_points": 23
-  }
 }

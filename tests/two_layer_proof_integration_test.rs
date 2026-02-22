@@ -21,7 +21,8 @@ use vchain_plus::chain::mmr::{
     TwoLayerProof, TwoLayerVerifyResult, BatchTwoLayerProof, SingleBlockProof,
     MemStore, MMR,
 };
-use vchain_plus::digest::{Digest, Digestible};
+use vchain_plus::digest::{blake2, Digest, Digestible};
+use std::collections::BTreeMap;
 
 // === 辅助函数 ===
 
@@ -141,12 +142,73 @@ fn test_two_layer_proof_detailed_verification() {
     println!("\n✓ 测试2通过：详细验证结果正确\n");
 }
 
+/// 辅助函数：按照 verify::hash 的逻辑手动计算 bplus_roots_hash
+/// bplus_roots_hash = blake2(dim0_digest || dim1_digest || ...)
+fn compute_bplus_roots_hash(hashes: &BTreeMap<u8, Digest>) -> Digest {
+    let mut state = blake2().to_state();
+    for (_dim, hash) in hashes {
+        state.update(hash.as_bytes());
+    }
+    Digest::from(state.finalize())
+}
+
+/// 辅助函数：按照 verify::hash 的逻辑手动计算 ads_hash
+/// ads_hash = blake2(bplus_roots_hash || trie_root_hash)
+fn compute_ads_hash(bplus_hash: Digest, trie_hash: Digest) -> Digest {
+    let mut state = blake2().to_state();
+    state.update(bplus_hash.as_bytes());
+    state.update(trie_hash.as_bytes());
+    Digest::from(state.finalize())
+}
+
+/// 辅助函数：按照 verify::hash 的逻辑手动计算 multi_ads_hash
+/// multi_ads_hash = blake2(tw1.to_digest() || ads1 || tw2.to_digest() || ads2 || ...)
+fn compute_multi_ads_hash(ads_map: &BTreeMap<u16, Digest>) -> Digest {
+    let mut state = blake2().to_state();
+    for (tw, ads) in ads_map {
+        state.update(tw.to_digest().as_bytes());
+        state.update(ads.as_bytes());
+    }
+    Digest::from(state.finalize())
+}
+
 /// 测试3：带索引证明的两层式证明
 #[test]
 fn test_two_layer_proof_with_index_proof() {
     println!("\n=== 测试3：带索引证明的两层式证明 ===");
 
-    let components = make_components(3);
+    // === 构建真实的索引数据，使 multi_ads_hash 可验证 ===
+    // 定义两个维度的 B+ 树根和一个 Trie 根
+    let bplus_root_dim0 = mock_hash(b"bplus_dim0");
+    let bplus_root_dim1 = mock_hash(b"bplus_dim1");
+    let trie_root = mock_hash(b"trie_root");
+
+    // 正向计算哈希链：bplus_roots → ads_hash → multi_ads_hash
+    let mut bplus_hashes = BTreeMap::new();
+    bplus_hashes.insert(0u8, bplus_root_dim0);
+    bplus_hashes.insert(1u8, bplus_root_dim1);
+    let bplus_hash = compute_bplus_roots_hash(&bplus_hashes);
+    let ads_hash_tw10 = compute_ads_hash(bplus_hash, trie_root);
+
+    // 也定义第二个时间窗口用于测试 sibling_ads_hashes
+    let bplus_root_tw20 = mock_hash(b"bplus_tw20");
+    let trie_root_tw20 = mock_hash(b"trie_tw20");
+    let mut bplus_hashes_tw20 = BTreeMap::new();
+    bplus_hashes_tw20.insert(0u8, bplus_root_tw20);
+    let bplus_hash_tw20 = compute_bplus_roots_hash(&bplus_hashes_tw20);
+    let ads_hash_tw20 = compute_ads_hash(bplus_hash_tw20, trie_root_tw20);
+
+    let mut all_ads = BTreeMap::new();
+    all_ads.insert(10u16, ads_hash_tw10);
+    all_ads.insert(20u16, ads_hash_tw20);
+    let multi_ads_hash = compute_multi_ads_hash(&all_ads);
+
+    // 用正确的 multi_ads_hash 构建 components
+    let components = BlockADSComponents::new(
+        mock_hash(b"id_set_root"),
+        mock_hash(b"id_tree_root"),
+        multi_ads_hash,
+    );
     let block_ads_root = components.compute_root();
 
     let store = MemStore::default();
@@ -155,7 +217,7 @@ fn test_two_layer_proof_with_index_proof() {
     let mmr_root = mmr.get_root().expect("MMR get_root failed");
     let mmr_merkle_proof = mmr.gen_proof(vec![pos]).expect("gen_proof failed");
 
-    // 测试 IdTree 索引证明
+    // --- 测试 IdTree 索引证明 ---
     println!("测试 IdTree 索引证明:");
     let id_tree_proof = IndexProof::IdTree {
         root_hash: components.id_tree_root_hash,
@@ -173,12 +235,20 @@ fn test_two_layer_proof_with_index_proof() {
     assert!(is_valid, "IdTree 索引证明验证失败");
     println!("  ✓ IdTree 索引证明验证通过");
 
-    // 测试 BPlusTree 索引证明
+    // --- 测试 BPlusTree 索引证明 ---
     println!("\n测试 BPlusTree 索引证明:");
+    let mut sibling_bplus = BTreeMap::new();
+    sibling_bplus.insert(1u8, bplus_root_dim1);
+    let mut sibling_ads = BTreeMap::new();
+    sibling_ads.insert(20u16, ads_hash_tw20);
+
     let bplus_proof = IndexProof::BPlusTree {
         dimension: 0,
         time_window: 10,
-        root_hash: mock_hash(b"bplus_root"),
+        root_hash: bplus_root_dim0,
+        sibling_bplus_hashes: sibling_bplus.clone(),
+        trie_root_hash: trie_root,
+        sibling_ads_hashes: sibling_ads.clone(),
     };
 
     let proof_with_bplus = TwoLayerProof::from_mmr_proof(
@@ -193,11 +263,36 @@ fn test_two_layer_proof_with_index_proof() {
     assert!(is_valid, "BPlusTree 索引证明验证失败");
     println!("  ✓ BPlusTree 索引证明验证通过");
 
-    // 测试 Trie 索引证明
+    // --- 测试 BPlusTree 索引证明 - 篡改后应失败 ---
+    println!("\n测试 BPlusTree 索引证明（篡改检测）:");
+    let tampered_bplus_proof = IndexProof::BPlusTree {
+        dimension: 0,
+        time_window: 10,
+        root_hash: mock_hash(b"TAMPERED"),  // 伪造的根哈希
+        sibling_bplus_hashes: sibling_bplus,
+        trie_root_hash: trie_root,
+        sibling_ads_hashes: sibling_ads.clone(),
+    };
+
+    let proof_tampered = TwoLayerProof::from_mmr_proof(
+        &mmr_merkle_proof,
+        Height(1),
+        block_ads_root,
+        components.clone(),
+        Some(tampered_bplus_proof),
+    );
+
+    let is_valid = proof_tampered.verify(mmr_root).expect("verify failed");
+    assert!(!is_valid, "篡改后的 BPlusTree 索引证明不应通过验证");
+    println!("  ✓ 篡改后的 BPlusTree 索引证明正确拒绝");
+
+    // --- 测试 Trie 索引证明 ---
     println!("\n测试 Trie 索引证明:");
     let trie_proof = IndexProof::Trie {
         time_window: 10,
-        root_hash: mock_hash(b"trie_root"),
+        root_hash: trie_root,
+        bplus_roots_hash: bplus_hash,
+        sibling_ads_hashes: sibling_ads,
     };
 
     let proof_with_trie = TwoLayerProof::from_mmr_proof(
@@ -212,8 +307,13 @@ fn test_two_layer_proof_with_index_proof() {
     assert!(is_valid, "Trie 索引证明验证失败");
     println!("  ✓ Trie 索引证明验证通过");
 
-    // 测试复合索引证明
+    // --- 测试复合索引证明 ---
     println!("\n测试复合索引证明:");
+    let mut composite_sibling_bplus = BTreeMap::new();
+    composite_sibling_bplus.insert(1u8, bplus_root_dim1);
+    let mut composite_sibling_ads = BTreeMap::new();
+    composite_sibling_ads.insert(20u16, ads_hash_tw20);
+
     let composite_proof = IndexProof::Composite {
         proofs: vec![
             IndexProof::IdTree {
@@ -222,7 +322,10 @@ fn test_two_layer_proof_with_index_proof() {
             IndexProof::BPlusTree {
                 dimension: 0,
                 time_window: 10,
-                root_hash: mock_hash(b"bplus_root"),
+                root_hash: bplus_root_dim0,
+                sibling_bplus_hashes: composite_sibling_bplus,
+                trie_root_hash: trie_root,
+                sibling_ads_hashes: composite_sibling_ads,
             },
         ],
     };

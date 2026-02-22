@@ -41,8 +41,10 @@ use crate::chain::block::Height;
 use crate::chain::mmr::helper::leaf_index_to_pos;
 use crate::chain::mmr::mmr::MerkleProof as MMRMerkleProof;
 use crate::chain::mmr::{BlockADSMerge, Error, Result};
+use crate::chain::verify::hash::{ads_hash, bplus_roots_hash, compute_multi_ads_hash};
 use crate::digest::Digest;
 use serde::{Deserialize, Serialize};
+use std::collections::BTreeMap;
 
 /// 两层式证明
 ///
@@ -81,29 +83,50 @@ pub struct BlockProofData {
 
 /// 索引证明类型
 ///
-/// 根据不同的查询类型，包含不同的索引证明
+/// 根据不同的查询类型，包含不同的索引证明。
+/// BPlusTree 和 Trie 变体携带兄弟哈希，用于重算 multi_ads_hash 并与
+/// BlockADSComponents 中的承诺值比对，确保索引根确实被包含在一体化承诺中。
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub enum IndexProof {
-    /// ID 树证明
+    /// ID 树证明：直接与 components.id_tree_root_hash 比对即可
     IdTree {
         /// ID 树根哈希
         root_hash: Digest,
     },
     /// B+ 树范围查询证明
+    ///
+    /// 验证路径: root_hash + sibling_bplus_hashes → bplus_roots_hash
+    ///           → ads_hash(bplus_roots_hash, trie_root_hash)
+    ///           + sibling_ads_hashes → multi_ads_hash
+    ///           → 与 components.multi_ads_hash 比对
     BPlusTree {
-        /// 维度
+        /// 目标维度
         dimension: u8,
-        /// 时间窗口
+        /// 目标时间窗口
         time_window: u16,
-        /// B+ 树根哈希
+        /// 目标 B+ 树根哈希
         root_hash: Digest,
+        /// 同一时间窗口内其他维度的 B+ 树根哈希（用于重建 bplus_roots_hash）
+        sibling_bplus_hashes: BTreeMap<u8, Digest>,
+        /// 同一时间窗口的 Trie 根哈希（用于重建单窗口 ads_hash）
+        trie_root_hash: Digest,
+        /// 其他时间窗口的 ads_hash（用于重建 multi_ads_hash）
+        sibling_ads_hashes: BTreeMap<u16, Digest>,
     },
     /// Trie 关键词查询证明
+    ///
+    /// 验证路径: bplus_roots_hash + root_hash → ads_hash
+    ///           + sibling_ads_hashes → multi_ads_hash
+    ///           → 与 components.multi_ads_hash 比对
     Trie {
-        /// 时间窗口
+        /// 目标时间窗口
         time_window: u16,
-        /// Trie 根哈希
+        /// 目标 Trie 根哈希
         root_hash: Digest,
+        /// 同一时间窗口所有 B+ 树根的聚合哈希（已预计算）
+        bplus_roots_hash: Digest,
+        /// 其他时间窗口的 ads_hash（用于重建 multi_ads_hash）
+        sibling_ads_hashes: BTreeMap<u16, Digest>,
     },
     /// 复合证明（多个索引）
     Composite {
@@ -211,18 +234,56 @@ impl TwoLayerProof {
     }
 
     /// 验证索引证明
+    ///
+    /// 对于 BPlusTree/Trie，利用携带的兄弟哈希重算 multi_ads_hash，
+    /// 并与 BlockADSComponents 中已承诺的值比对。
+    /// 这条验证链路与 verify.rs::inner_verify 中的逻辑完全一致。
     fn verify_index_proof(&self, index_proof: &IndexProof) -> Result<bool> {
         match index_proof {
             IndexProof::IdTree { root_hash } => {
                 // 验证 ID 树根哈希与组件中的一致
                 Ok(*root_hash == self.block_proof.components.id_tree_root_hash)
             }
-            IndexProof::BPlusTree { root_hash, .. } | IndexProof::Trie { root_hash, .. } => {
-                // B+ 树和 Trie 的根哈希包含在 multi_ads_hash 中
-                // 这里只做基本验证，详细验证由具体的索引证明模块完成
-                // multi_ads_hash 是所有 B+ 树和 Trie 根的聚合哈希
-                // 具体的验证需要额外的 Merkle 证明
-                Ok(*root_hash != Digest::default())
+            IndexProof::BPlusTree {
+                dimension,
+                time_window,
+                root_hash,
+                sibling_bplus_hashes,
+                trie_root_hash,
+                sibling_ads_hashes,
+            } => {
+                // Step 1: 将目标 B+ 树根与兄弟根合并，重算 bplus_roots_hash
+                let mut all_bplus: BTreeMap<u8, Digest> = sibling_bplus_hashes.clone();
+                all_bplus.insert(*dimension, *root_hash);
+                let bplus_hash = bplus_roots_hash(all_bplus.iter());
+
+                // Step 2: 计算当前时间窗口的 ads_hash
+                let this_ads = ads_hash(bplus_hash, *trie_root_hash);
+
+                // Step 3: 将当前窗口与兄弟窗口合并，重算 multi_ads_hash
+                let mut all_ads: BTreeMap<u16, Digest> = sibling_ads_hashes.clone();
+                all_ads.insert(*time_window, this_ads);
+                let computed_multi_ads_hash = compute_multi_ads_hash(all_ads.iter());
+
+                // Step 4: 与 components 中已承诺的 multi_ads_hash 比对
+                Ok(computed_multi_ads_hash == self.block_proof.components.multi_ads_hash)
+            }
+            IndexProof::Trie {
+                time_window,
+                root_hash,
+                bplus_roots_hash: bplus_hash,
+                sibling_ads_hashes,
+            } => {
+                // Step 1: 计算当前时间窗口的 ads_hash
+                let this_ads = ads_hash(*bplus_hash, *root_hash);
+
+                // Step 2: 将当前窗口与兄弟窗口合并，重算 multi_ads_hash
+                let mut all_ads: BTreeMap<u16, Digest> = sibling_ads_hashes.clone();
+                all_ads.insert(*time_window, this_ads);
+                let computed_multi_ads_hash = compute_multi_ads_hash(all_ads.iter());
+
+                // Step 3: 与 components 中已承诺的 multi_ads_hash 比对
+                Ok(computed_multi_ads_hash == self.block_proof.components.multi_ads_hash)
             }
             IndexProof::Composite { proofs } => {
                 // 验证所有子证明
