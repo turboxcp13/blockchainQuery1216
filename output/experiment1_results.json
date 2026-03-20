@@ -1,7 +1,7 @@
 {
     "metadata": {
         "experiment_name": "experiment1_proof_size_comparison",
-        "description": "链级证明大小对比实验",
+        "description": "链级证明大小对比实验(0320)",
         "timestamp": 1768917323,
         "dataset_path": "data/dataset/eth.dat",
         "key_path": "output/pk_eth.key",

@@ -1,7 +1,7 @@
 {
     "metadata": {
         "experiment_name": "experiment2_verify_time_comparison",
-        "description": "验证时间多方案对比实验（含两层式验证时间分解，使用预热+截断均值）",
+        "description": "验证时间多方案对比实验（含两层式验证时间分解，使用预热+截断均值）(0320)",
         "timestamp": 1770106706,
         "dataset_path": "data/dataset/eth.dat",
         "key_path": "output/pk_eth.key",
