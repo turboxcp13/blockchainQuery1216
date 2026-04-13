@@ -1,2307 +1,2566 @@
 {
-    "metadata": {
-        "experiment_name": "experiment2_verify_time_comparison",
-        "description": "验证时间多方案对比实验（含两层式验证时间分解，使用预热+截断均值）(0320)",
-        "timestamp": 1770106706,
-        "dataset_path": "data/dataset/eth.dat",
-        "key_path": "output/pk_eth.key",
-        "chain_lengths": [
-            100, 200, 300, 400, 500, 750, 1000, 1500, 2000, 2500, 3000, 4000,
-            5000, 6000, 7000, 8000, 9000, 10000, 12000, 14000, 16000, 18000,
-            20000
-        ],
-        "verify_iterations": 500,
-        "warmup_iterations": 50,
-        "trim_percent": 10.0,
-        "hash_size": 32,
-        "scattered_block_header_size": 164,
-        "unified_block_header_size": 100,
-        "schemes": [
-            {
-                "name": "HeaderChain",
-                "chain_proof_type": "HeaderChain",
-                "block_verify_type": "None",
-                "description": "区块头链同步验证（最原始方案）",
-                "block_header_size": 164,
-                "is_two_layer": false
-            },
-            {
-                "name": "Merkle",
-                "chain_proof_type": "Merkle",
-                "block_verify_type": "HeaderHash",
-                "description": "Merkle树证明验证（常见优化方案）",
-                "block_header_size": 164,
-                "is_two_layer": false
-            },
-            {
-                "name": "MMR-Scattered",
-                "chain_proof_type": "MMR",
-                "block_verify_type": "HeaderHash",
-                "description": "MMR验证 + 分散索引根（仅链级优化）",
-                "block_header_size": 164,
-                "is_two_layer": false
-            },
-            {
-                "name": "Two-Layer",
-                "chain_proof_type": "MMR",
-                "block_verify_type": "AdsRootExpand",
-                "description": "MMR验证 + BlockADSRoot展开验证（本文两层式方案）",
-                "block_header_size": 100,
-                "is_two_layer": true
-            }
-        ]
-    },
-    "results": [
-        {
-            "chain_length": 100,
-            "log2_n": 6.643856189774724,
-            "test_block_height": 50,
-            "actual_mmr_proof_items": 7,
-            "schemes": [
-                {
-                    "scheme_name": "HeaderChain",
-                    "chain_verify_time_us": 15.299999999999999,
-                    "block_verify_time_us": 0.0,
-                    "total_verify_time_us": 15.299999999999999,
-                    "speedup_vs_header_chain": 1.0
-                },
-                {
-                    "scheme_name": "Merkle",
-                    "chain_verify_time_us": 1.10775,
-                    "block_verify_time_us": 0.3,
-                    "total_verify_time_us": 1.40775,
-                    "speedup_vs_header_chain": 10.868407032498666
-                },
-                {
-                    "scheme_name": "MMR-Scattered",
-                    "chain_verify_time_us": 1.59725,
-                    "block_verify_time_us": 0.3,
-                    "total_verify_time_us": 1.89725,
-                    "speedup_vs_header_chain": 8.064303597311898
-                },
-                {
-                    "scheme_name": "Two-Layer",
-                    "chain_verify_time_us": 1.6,
-                    "block_verify_time_us": 0.18575,
-                    "total_verify_time_us": 1.7857500000000002,
-                    "speedup_vs_header_chain": 8.56782864342713
-                }
-            ],
-            "two_layer_breakdown": {
-                "layer1_mmr_verify": {
-                    "mean_us": 1.5996,
-                    "trimmed_mean_us": 1.6,
-                    "min_us": 1,
-                    "max_us": 1,
-                    "std_us": 0.03581068010551094
-                },
-                "layer2_ads_root_expand": {
-                    "mean_us": 0.17880000000000001,
-                    "trimmed_mean_us": 0.18575,
-                    "min_us": 0,
-                    "max_us": 0,
-                    "std_us": 0.04140033787243629
-                },
-                "total": {
-                    "mean_us": 1.8908,
-                    "trimmed_mean_us": 1.89575,
-                    "min_us": 1,
-                    "max_us": 2,
-                    "std_us": 0.04241412401348961
-                },
-                "layer2_overhead_percent": 9.798232889357774
-            },
-            "measured_base_times": {
-                "single_hash": {
-                    "mean_us": 0.1574,
-                    "trimmed_mean_us": 0.15825,
-                    "min_us": 0,
-                    "max_us": 0,
-                    "std_us": 0.05339421208115674
-                },
-                "header_hash_scattered": {
-                    "mean_us": 0.29419999999999996,
-                    "trimmed_mean_us": 0.3,
-                    "min_us": 0,
-                    "max_us": 0,
-                    "std_us": 0.02660405140391615
-                },
-                "header_hash_unified": {
-                    "mean_us": 0.1686,
-                    "trimmed_mean_us": 0.17325,
-                    "min_us": 0,
-                    "max_us": 0,
-                    "std_us": 0.04645811784206113
-                },
-                "ads_root_expand": {
-                    "mean_us": 0.15380000000000002,
-                    "trimmed_mean_us": 0.15475,
-                    "min_us": 0,
-                    "max_us": 0,
-                    "std_us": 0.049905321180855035
-                }
-            },
-            "mmr_verify_stats": {
-                "mean_us": 1.5944,
-                "trimmed_mean_us": 1.59725,
-                "min_us": 1,
-                "max_us": 2,
-                "std_us": 0.04746731815244225
-            }
-        },
-        {
-            "chain_length": 200,
-            "log2_n": 7.643856189774724,
-            "test_block_height": 100,
-            "actual_mmr_proof_items": 8,
-            "schemes": [
-                {
-                    "scheme_name": "HeaderChain",
-                    "chain_verify_time_us": 151.197,
-                    "block_verify_time_us": 0.0,
-                    "total_verify_time_us": 151.197,
-                    "speedup_vs_header_chain": 1.0
-                },
-                {
-                    "scheme_name": "Merkle",
-                    "chain_verify_time_us": 6.4,
-                    "block_verify_time_us": 1.497,
-                    "total_verify_time_us": 7.897,
-                    "speedup_vs_header_chain": 19.146131442319867
-                },
-                {
-                    "scheme_name": "MMR-Scattered",
-                    "chain_verify_time_us": 8.255,
-                    "block_verify_time_us": 1.497,
-                    "total_verify_time_us": 9.752,
-                    "speedup_vs_header_chain": 15.504204265791632
-                },
-                {
-                    "scheme_name": "Two-Layer",
-                    "chain_verify_time_us": 8.357,
-                    "block_verify_time_us": 0.88575,
-                    "total_verify_time_us": 9.24275,
-                    "speedup_vs_header_chain": 16.35844310405453
-                }
-            ],
-            "two_layer_breakdown": {
-                "layer1_mmr_verify": {
-                    "mean_us": 9.032200000000001,
-                    "trimmed_mean_us": 8.357,
-                    "min_us": 8,
-                    "max_us": 168,
-                    "std_us": 8.307373114054247
-                },
-                "layer2_ads_root_expand": {
-                    "mean_us": 0.8912,
-                    "trimmed_mean_us": 0.88575,
-                    "min_us": 0,
-                    "max_us": 1,
-                    "std_us": 0.07465726632304205
-                },
-                "total": {
-                    "mean_us": 10.336200000000002,
-                    "trimmed_mean_us": 9.65125,
-                    "min_us": 9,
-                    "max_us": 172,
-                    "std_us": 8.41326307392697
-                },
-                "layer2_overhead_percent": 9.177567672581272
-            },
-            "measured_base_times": {
-                "single_hash": {
-                    "mean_us": 0.8687999999999999,
-                    "trimmed_mean_us": 0.8,
-                    "min_us": 0,
-                    "max_us": 31,
-                    "std_us": 1.3915096687830377
-                },
-                "header_hash_scattered": {
-                    "mean_us": 1.8052000000000001,
-                    "trimmed_mean_us": 1.497,
-                    "min_us": 1,
-                    "max_us": 159,
-                    "std_us": 7.071029052671762
-                },
-                "header_hash_unified": {
-                    "mean_us": 0.8136,
-                    "trimmed_mean_us": 0.804,
-                    "min_us": 0,
-                    "max_us": 1,
-                    "std_us": 0.03546202349303329
-                },
-                "ads_root_expand": {
-                    "mean_us": 0.8208,
-                    "trimmed_mean_us": 0.81325,
-                    "min_us": 0,
-                    "max_us": 1,
-                    "std_us": 0.041118626958666075
-                }
-            },
-            "mmr_verify_stats": {
-                "mean_us": 12.2232,
-                "trimmed_mean_us": 8.255,
-                "min_us": 5,
-                "max_us": 729,
-                "std_us": 38.6134907136117
-            }
-        },
-        {
-            "chain_length": 300,
-            "log2_n": 8.228818690495881,
-            "test_block_height": 150,
-            "actual_mmr_proof_items": 9,
-            "schemes": [
-                {
-                    "scheme_name": "HeaderChain",
-                    "chain_verify_time_us": 161.268,
-                    "block_verify_time_us": 0.0,
-                    "total_verify_time_us": 161.268,
-                    "speedup_vs_header_chain": 1.0
-                },
-                {
-                    "scheme_name": "Merkle",
-                    "chain_verify_time_us": 5.8477500000000004,
-                    "block_verify_time_us": 1.068,
-                    "total_verify_time_us": 6.915750000000001,
-                    "speedup_vs_header_chain": 23.318945884394314
-                },
-                {
-                    "scheme_name": "MMR-Scattered",
-                    "chain_verify_time_us": 9.034,
-                    "block_verify_time_us": 1.068,
-                    "total_verify_time_us": 10.102,
-                    "speedup_vs_header_chain": 15.963967531181943
-                },
-                {
-                    "scheme_name": "Two-Layer",
-                    "chain_verify_time_us": 9.033,
-                    "block_verify_time_us": 0.8705,
-                    "total_verify_time_us": 9.9035,
-                    "speedup_vs_header_chain": 16.283940021204625
-                }
-            ],
-            "two_layer_breakdown": {
-                "layer1_mmr_verify": {
-                    "mean_us": 9.0266,
-                    "trimmed_mean_us": 9.033,
-                    "min_us": 7,
-                    "max_us": 22,
-                    "std_us": 1.0652050335625791
-                },
-                "layer2_ads_root_expand": {
-                    "mean_us": 0.8622000000000001,
-                    "trimmed_mean_us": 0.8705,
-                    "min_us": 0,
-                    "max_us": 1,
-                    "std_us": 0.06292120593498364
-                },
-                "total": {
-                    "mean_us": 10.2936,
-                    "trimmed_mean_us": 10.31,
-                    "min_us": 8,
-                    "max_us": 23,
-                    "std_us": 1.089372528114243
-                },
-                "layer2_overhead_percent": 8.44325897187197
-            },
-            "measured_base_times": {
-                "single_hash": {
-                    "mean_us": 0.6346,
-                    "trimmed_mean_us": 0.64975,
-                    "min_us": 0,
-                    "max_us": 1,
-                    "std_us": 0.19743556316734467
-                },
-                "header_hash_scattered": {
-                    "mean_us": 1.0956,
-                    "trimmed_mean_us": 1.068,
-                    "min_us": 0,
-                    "max_us": 1,
-                    "std_us": 0.2684114927847118
-                },
-                "header_hash_unified": {
-                    "mean_us": 0.528,
-                    "trimmed_mean_us": 0.50075,
-                    "min_us": 0,
-                    "max_us": 0,
-                    "std_us": 0.0946250908355245
-                },
-                "ads_root_expand": {
-                    "mean_us": 0.7787999999999999,
-                    "trimmed_mean_us": 0.672,
-                    "min_us": 0,
-                    "max_us": 50,
-                    "std_us": 2.2300171553210246
-                }
-            },
-            "mmr_verify_stats": {
-                "mean_us": 8.7838,
-                "trimmed_mean_us": 9.034,
-                "min_us": 3,
-                "max_us": 28,
-                "std_us": 1.6302124847672514
-            }
-        },
-        {
-            "chain_length": 400,
-            "log2_n": 8.643856189774725,
-            "test_block_height": 200,
-            "actual_mmr_proof_items": 9,
-            "schemes": [
-                {
-                    "scheme_name": "HeaderChain",
-                    "chain_verify_time_us": 302.05275,
-                    "block_verify_time_us": 0.0,
-                    "total_verify_time_us": 302.05275,
-                    "speedup_vs_header_chain": 1.0
-                },
-                {
-                    "scheme_name": "Merkle",
-                    "chain_verify_time_us": 7.2,
-                    "block_verify_time_us": 1.50275,
-                    "total_verify_time_us": 8.70275,
-                    "speedup_vs_header_chain": 34.707736060440666
-                },
-                {
-                    "scheme_name": "MMR-Scattered",
-                    "chain_verify_time_us": 9.17175,
-                    "block_verify_time_us": 1.50275,
-                    "total_verify_time_us": 10.6745,
-                    "speedup_vs_header_chain": 28.29666494917795
-                },
-                {
-                    "scheme_name": "Two-Layer",
-                    "chain_verify_time_us": 9.13525,
-                    "block_verify_time_us": 0.87275,
-                    "total_verify_time_us": 10.008,
-                    "speedup_vs_header_chain": 30.181130095923265
-                }
-            ],
-            "two_layer_breakdown": {
-                "layer1_mmr_verify": {
-                    "mean_us": 11.401200000000001,
-                    "trimmed_mean_us": 9.13525,
-                    "min_us": 3,
-                    "max_us": 269,
-                    "std_us": 18.733566975438734
-                },
-                "layer2_ads_root_expand": {
-                    "mean_us": 0.8822000000000001,
-                    "trimmed_mean_us": 0.87275,
-                    "min_us": 0,
-                    "max_us": 19,
-                    "std_us": 0.8245379832194023
-                },
-                "total": {
-                    "mean_us": 12.6846,
-                    "trimmed_mean_us": 10.4105,
-                    "min_us": 4,
-                    "max_us": 271,
-                    "std_us": 18.85168945294995
-                },
-                "layer2_overhead_percent": 8.383362950866912
-            },
-            "measured_base_times": {
-                "single_hash": {
-                    "mean_us": 0.804,
-                    "trimmed_mean_us": 0.8,
-                    "min_us": 0,
-                    "max_us": 1,
-                    "std_us": 0.031400190188719805
-                },
-                "header_hash_scattered": {
-                    "mean_us": 1.5652000000000001,
-                    "trimmed_mean_us": 1.50275,
-                    "min_us": 1,
-                    "max_us": 27,
-                    "std_us": 1.1594643915837497
-                },
-                "header_hash_unified": {
-                    "mean_us": 0.8677999999999999,
-                    "trimmed_mean_us": 0.81125,
-                    "min_us": 0,
-                    "max_us": 24,
-                    "std_us": 1.0689942269791068
-                },
-                "ads_root_expand": {
-                    "mean_us": 0.8276,
-                    "trimmed_mean_us": 0.82,
-                    "min_us": 0,
-                    "max_us": 1,
-                    "std_us": 0.05218895836045692
-                }
-            },
-            "mmr_verify_stats": {
-                "mean_us": 10.2146,
-                "trimmed_mean_us": 9.17175,
-                "min_us": 9,
-                "max_us": 292,
-                "std_us": 14.264633411789708
-            }
-        },
-        {
-            "chain_length": 500,
-            "log2_n": 8.965784284662087,
-            "test_block_height": 250,
-            "actual_mmr_proof_items": 9,
-            "schemes": [
-                {
-                    "scheme_name": "HeaderChain",
-                    "chain_verify_time_us": 376.5,
-                    "block_verify_time_us": 0.0,
-                    "total_verify_time_us": 376.5,
-                    "speedup_vs_header_chain": 1.0
-                },
-                {
-                    "scheme_name": "Merkle",
-                    "chain_verify_time_us": 7.2,
-                    "block_verify_time_us": 1.5,
-                    "total_verify_time_us": 8.7,
-                    "speedup_vs_header_chain": 43.27586206896552
-                },
-                {
-                    "scheme_name": "MMR-Scattered",
-                    "chain_verify_time_us": 9.31075,
-                    "block_verify_time_us": 1.5,
-                    "total_verify_time_us": 10.81075,
-                    "speedup_vs_header_chain": 34.82644589875818
-                },
-                {
-                    "scheme_name": "Two-Layer",
-                    "chain_verify_time_us": 9.5875,
-                    "block_verify_time_us": 0.9,
-                    "total_verify_time_us": 10.4875,
-                    "speedup_vs_header_chain": 35.899880810488675
-                }
-            ],
-            "two_layer_breakdown": {
-                "layer1_mmr_verify": {
-                    "mean_us": 9.943200000000001,
-                    "trimmed_mean_us": 9.5875,
-                    "min_us": 9,
-                    "max_us": 37,
-                    "std_us": 1.8245744445781384
-                },
-                "layer2_ads_root_expand": {
-                    "mean_us": 0.9132,
-                    "trimmed_mean_us": 0.9,
-                    "min_us": 0,
-                    "max_us": 4,
-                    "std_us": 0.14473304843960608
-                },
-                "total": {
-                    "mean_us": 11.283,
-                    "trimmed_mean_us": 10.91475,
-                    "min_us": 10,
-                    "max_us": 38,
-                    "std_us": 1.83698667389836
-                },
-                "layer2_overhead_percent": 8.245722531436819
-            },
-            "measured_base_times": {
-                "single_hash": {
-                    "mean_us": 0.8176,
-                    "trimmed_mean_us": 0.8,
-                    "min_us": 0,
-                    "max_us": 5,
-                    "std_us": 0.22178506990884334
-                },
-                "header_hash_scattered": {
-                    "mean_us": 1.6856,
-                    "trimmed_mean_us": 1.5,
-                    "min_us": 1,
-                    "max_us": 44,
-                    "std_us": 2.5479672120786323
-                },
-                "header_hash_unified": {
-                    "mean_us": 0.8294,
-                    "trimmed_mean_us": 0.80975,
-                    "min_us": 0,
-                    "max_us": 3,
-                    "std_us": 0.19222262894403472
-                },
-                "ads_root_expand": {
-                    "mean_us": 0.8438,
-                    "trimmed_mean_us": 0.81625,
-                    "min_us": 0,
-                    "max_us": 4,
-                    "std_us": 0.2632872963148829
-                }
-            },
-            "mmr_verify_stats": {
-                "mean_us": 10.619,
-                "trimmed_mean_us": 9.31075,
-                "min_us": 8,
-                "max_us": 110,
-                "std_us": 8.251632437024295
-            }
-        },
-        {
-            "chain_length": 750,
-            "log2_n": 9.550746785383243,
-            "test_block_height": 375,
-            "actual_mmr_proof_items": 10,
-            "schemes": [
-                {
-                    "scheme_name": "HeaderChain",
-                    "chain_verify_time_us": 564.0,
-                    "block_verify_time_us": 0.0,
-                    "total_verify_time_us": 564.0,
-                    "speedup_vs_header_chain": 1.0
-                },
-                {
-                    "scheme_name": "Merkle",
-                    "chain_verify_time_us": 8.0,
-                    "block_verify_time_us": 1.5,
-                    "total_verify_time_us": 9.5,
-                    "speedup_vs_header_chain": 59.36842105263158
-                },
-                {
-                    "scheme_name": "MMR-Scattered",
-                    "chain_verify_time_us": 9.84225,
-                    "block_verify_time_us": 1.5,
-                    "total_verify_time_us": 11.34225,
-                    "speedup_vs_header_chain": 49.725583548237786
-                },
-                {
-                    "scheme_name": "Two-Layer",
-                    "chain_verify_time_us": 9.72775,
-                    "block_verify_time_us": 0.8495,
-                    "total_verify_time_us": 10.577250000000001,
-                    "speedup_vs_header_chain": 53.32198822945472
-                }
-            ],
-            "two_layer_breakdown": {
-                "layer1_mmr_verify": {
-                    "mean_us": 9.3964,
-                    "trimmed_mean_us": 9.72775,
-                    "min_us": 4,
-                    "max_us": 27,
-                    "std_us": 1.8885656993606634
-                },
-                "layer2_ads_root_expand": {
-                    "mean_us": 0.8568,
-                    "trimmed_mean_us": 0.8495,
-                    "min_us": 0,
-                    "max_us": 21,
-                    "std_us": 0.9266991435224374
-                },
-                "total": {
-                    "mean_us": 10.636,
-                    "trimmed_mean_us": 10.98,
-                    "min_us": 4,
-                    "max_us": 31,
-                    "std_us": 2.2528770294491527
-                },
-                "layer2_overhead_percent": 7.736794171220401
-            },
-            "measured_base_times": {
-                "single_hash": {
-                    "mean_us": 0.8094,
-                    "trimmed_mean_us": 0.8,
-                    "min_us": 0,
-                    "max_us": 1,
-                    "std_us": 0.03968361852399937
-                },
-                "header_hash_scattered": {
-                    "mean_us": 1.5562,
-                    "trimmed_mean_us": 1.5,
-                    "min_us": 1,
-                    "max_us": 32,
-                    "std_us": 1.3824775036492256
-                },
-                "header_hash_unified": {
-                    "mean_us": 0.8174,
-                    "trimmed_mean_us": 0.80925,
-                    "min_us": 0,
-                    "max_us": 0,
-                    "std_us": 0.037948916196394455
-                },
-                "ads_root_expand": {
-                    "mean_us": 1.377,
-                    "trimmed_mean_us": 0.822,
-                    "min_us": 0,
-                    "max_us": 270,
-                    "std_us": 12.060279918119928
-                }
-            },
-            "mmr_verify_stats": {
-                "mean_us": 10.255,
-                "trimmed_mean_us": 9.84225,
-                "min_us": 4,
-                "max_us": 127,
-                "std_us": 6.043041593718085
-            }
-        },
-        {
-            "chain_length": 1000,
-            "log2_n": 9.965784284662087,
-            "test_block_height": 500,
-            "actual_mmr_proof_items": 10,
-            "schemes": [
-                {
-                    "scheme_name": "HeaderChain",
-                    "chain_verify_time_us": 150.29999999999998,
-                    "block_verify_time_us": 0.0,
-                    "total_verify_time_us": 150.29999999999998,
-                    "speedup_vs_header_chain": 1.0
-                },
-                {
-                    "scheme_name": "Merkle",
-                    "chain_verify_time_us": 1.585,
-                    "block_verify_time_us": 0.3,
-                    "total_verify_time_us": 1.885,
-                    "speedup_vs_header_chain": 79.73474801061008
-                },
-                {
-                    "scheme_name": "MMR-Scattered",
-                    "chain_verify_time_us": 2.12975,
-                    "block_verify_time_us": 0.3,
-                    "total_verify_time_us": 2.42975,
-                    "speedup_vs_header_chain": 61.85821586582981
-                },
-                {
-                    "scheme_name": "Two-Layer",
-                    "chain_verify_time_us": 2.127,
-                    "block_verify_time_us": 0.2,
-                    "total_verify_time_us": 2.327,
-                    "speedup_vs_header_chain": 64.58960034379028
-                }
-            ],
-            "two_layer_breakdown": {
-                "layer1_mmr_verify": {
-                    "mean_us": 2.1358,
-                    "trimmed_mean_us": 2.127,
-                    "min_us": 2,
-                    "max_us": 2,
-                    "std_us": 0.06345402135130015
-                },
-                "layer2_ads_root_expand": {
-                    "mean_us": 0.19140000000000001,
-                    "trimmed_mean_us": 0.2,
-                    "min_us": 0,
-                    "max_us": 0,
-                    "std_us": 0.03013064405921076
-                },
-                "total": {
-                    "mean_us": 2.4476,
-                    "trimmed_mean_us": 2.44075,
-                    "min_us": 2,
-                    "max_us": 3,
-                    "std_us": 0.06887472290259897
-                },
-                "layer2_overhead_percent": 8.194202601659327
-            },
-            "measured_base_times": {
-                "single_hash": {
-                    "mean_us": 0.158,
-                    "trimmed_mean_us": 0.1585,
-                    "min_us": 0,
-                    "max_us": 0,
-                    "std_us": 0.05729367443497163
-                },
-                "header_hash_scattered": {
-                    "mean_us": 0.29760000000000003,
-                    "trimmed_mean_us": 0.3,
-                    "min_us": 0,
-                    "max_us": 0,
-                    "std_us": 0.018840114113231936
-                },
-                "header_hash_unified": {
-                    "mean_us": 0.1676,
-                    "trimmed_mean_us": 0.172,
-                    "min_us": 0,
-                    "max_us": 0,
-                    "std_us": 0.04684687031720519
-                },
-                "ads_root_expand": {
-                    "mean_us": 0.1668,
-                    "trimmed_mean_us": 0.171,
-                    "min_us": 0,
-                    "max_us": 0,
-                    "std_us": 0.04714026313903675
-                }
-            },
-            "mmr_verify_stats": {
-                "mean_us": 2.1828000000000003,
-                "trimmed_mean_us": 2.12975,
-                "min_us": 2,
-                "max_us": 25,
-                "std_us": 1.034681250715002
-            }
-        },
-        {
-            "chain_length": 1500,
-            "log2_n": 10.550746785383243,
-            "test_block_height": 750,
-            "actual_mmr_proof_items": 11,
-            "schemes": [
-                {
-                    "scheme_name": "HeaderChain",
-                    "chain_verify_time_us": 225.29999999999998,
-                    "block_verify_time_us": 0.0,
-                    "total_verify_time_us": 225.29999999999998,
-                    "speedup_vs_header_chain": 1.0
-                },
-                {
-                    "scheme_name": "Merkle",
-                    "chain_verify_time_us": 1.75175,
-                    "block_verify_time_us": 0.3,
-                    "total_verify_time_us": 2.0517499999999997,
-                    "speedup_vs_header_chain": 109.80869989033752
-                },
-                {
-                    "scheme_name": "MMR-Scattered",
-                    "chain_verify_time_us": 2.31025,
-                    "block_verify_time_us": 0.3,
-                    "total_verify_time_us": 2.6102499999999997,
-                    "speedup_vs_header_chain": 86.31357149698304
-                },
-                {
-                    "scheme_name": "Two-Layer",
-                    "chain_verify_time_us": 2.30125,
-                    "block_verify_time_us": 0.2,
-                    "total_verify_time_us": 2.50125,
-                    "speedup_vs_header_chain": 90.07496251874062
-                }
-            ],
-            "two_layer_breakdown": {
-                "layer1_mmr_verify": {
-                    "mean_us": 2.3242,
-                    "trimmed_mean_us": 2.30125,
-                    "min_us": 2,
-                    "max_us": 10,
-                    "std_us": 0.35019942786726155
-                },
-                "layer2_ads_root_expand": {
-                    "mean_us": 0.1966,
-                    "trimmed_mean_us": 0.2,
-                    "min_us": 0,
-                    "max_us": 0,
-                    "std_us": 0.02301084522558852
-                },
-                "total": {
-                    "mean_us": 2.6342,
-                    "trimmed_mean_us": 2.613,
-                    "min_us": 2,
-                    "max_us": 10,
-                    "std_us": 0.3507369281749091
-                },
-                "layer2_overhead_percent": 7.6540375047837745
-            },
-            "measured_base_times": {
-                "single_hash": {
-                    "mean_us": 0.1584,
-                    "trimmed_mean_us": 0.15925,
-                    "min_us": 0,
-                    "max_us": 0,
-                    "std_us": 0.05362080175418457
-                },
-                "header_hash_scattered": {
-                    "mean_us": 0.2994,
-                    "trimmed_mean_us": 0.3,
-                    "min_us": 0,
-                    "max_us": 0,
-                    "std_us": 0.031330547496218754
-                },
-                "header_hash_unified": {
-                    "mean_us": 0.195,
-                    "trimmed_mean_us": 0.17125,
-                    "min_us": 0,
-                    "max_us": 13,
-                    "std_us": 0.6161121556800787
-                },
-                "ads_root_expand": {
-                    "mean_us": 0.1716,
-                    "trimmed_mean_us": 0.177,
-                    "min_us": 0,
-                    "max_us": 0,
-                    "std_us": 0.04513884170047059
-                }
-            },
-            "mmr_verify_stats": {
-                "mean_us": 2.4774000000000003,
-                "trimmed_mean_us": 2.31025,
-                "min_us": 2,
-                "max_us": 41,
-                "std_us": 2.04202079761097
-            }
-        },
-        {
-            "chain_length": 2000,
-            "log2_n": 10.965784284662087,
-            "test_block_height": 1000,
-            "actual_mmr_proof_items": 11,
-            "schemes": [
-                {
-                    "scheme_name": "HeaderChain",
-                    "chain_verify_time_us": 300.3,
-                    "block_verify_time_us": 0.0,
-                    "total_verify_time_us": 300.3,
-                    "speedup_vs_header_chain": 1.0
-                },
-                {
-                    "scheme_name": "Merkle",
-                    "chain_verify_time_us": 1.7737500000000002,
-                    "block_verify_time_us": 0.3,
-                    "total_verify_time_us": 2.07375,
-                    "speedup_vs_header_chain": 144.81012658227849
-                },
-                {
-                    "scheme_name": "MMR-Scattered",
-                    "chain_verify_time_us": 2.311,
-                    "block_verify_time_us": 0.3,
-                    "total_verify_time_us": 2.6109999999999998,
-                    "speedup_vs_header_chain": 115.01340482573728
-                },
-                {
-                    "scheme_name": "Two-Layer",
-                    "chain_verify_time_us": 2.3,
-                    "block_verify_time_us": 0.19325,
-                    "total_verify_time_us": 2.4932499999999997,
-                    "speedup_vs_header_chain": 120.44520204552293
-                }
-            ],
-            "two_layer_breakdown": {
-                "layer1_mmr_verify": {
-                    "mean_us": 2.303,
-                    "trimmed_mean_us": 2.3,
-                    "min_us": 2,
-                    "max_us": 2,
-                    "std_us": 0.04067319285763621
-                },
-                "layer2_ads_root_expand": {
-                    "mean_us": 0.1992,
-                    "trimmed_mean_us": 0.19325,
-                    "min_us": 0,
-                    "max_us": 7,
-                    "std_us": 0.32473105875638447
-                },
-                "total": {
-                    "mean_us": 2.6188000000000002,
-                    "trimmed_mean_us": 2.6,
-                    "min_us": 2,
-                    "max_us": 9,
-                    "std_us": 0.3244334664431141
-                },
-                "layer2_overhead_percent": 7.432692307692308
-            },
-            "measured_base_times": {
-                "single_hash": {
-                    "mean_us": 0.15919999999999998,
-                    "trimmed_mean_us": 0.16125,
-                    "min_us": 0,
-                    "max_us": 0,
-                    "std_us": 0.049601215319004424
-                },
-                "header_hash_scattered": {
-                    "mean_us": 0.29619999999999996,
-                    "trimmed_mean_us": 0.3,
-                    "min_us": 0,
-                    "max_us": 0,
-                    "std_us": 0.020158689081658656
-                },
-                "header_hash_unified": {
-                    "mean_us": 0.171,
-                    "trimmed_mean_us": 0.17625,
-                    "min_us": 0,
-                    "max_us": 0,
-                    "std_us": 0.04542164960131908
-                },
-                "ads_root_expand": {
-                    "mean_us": 0.1606,
-                    "trimmed_mean_us": 0.163,
-                    "min_us": 0,
-                    "max_us": 0,
-                    "std_us": 0.049320431973169564
-                }
-            },
-            "mmr_verify_stats": {
-                "mean_us": 2.3824,
-                "trimmed_mean_us": 2.311,
-                "min_us": 2,
-                "max_us": 24,
-                "std_us": 1.0108877425590395
-            }
-        },
-        {
-            "chain_length": 2500,
-            "log2_n": 11.287712379549449,
-            "test_block_height": 1250,
-            "actual_mmr_proof_items": 12,
-            "schemes": [
-                {
-                    "scheme_name": "HeaderChain",
-                    "chain_verify_time_us": 375.3,
-                    "block_verify_time_us": 0.0,
-                    "total_verify_time_us": 375.3,
-                    "speedup_vs_header_chain": 1.0
-                },
-                {
-                    "scheme_name": "Merkle",
-                    "chain_verify_time_us": 2.0220000000000002,
-                    "block_verify_time_us": 0.3,
-                    "total_verify_time_us": 2.322,
-                    "speedup_vs_header_chain": 161.62790697674419
-                },
-                {
-                    "scheme_name": "MMR-Scattered",
-                    "chain_verify_time_us": 2.48075,
-                    "block_verify_time_us": 0.3,
-                    "total_verify_time_us": 2.78075,
-                    "speedup_vs_header_chain": 134.96358895981302
-                },
-                {
-                    "scheme_name": "Two-Layer",
-                    "chain_verify_time_us": 2.48325,
-                    "block_verify_time_us": 0.2,
-                    "total_verify_time_us": 2.68325,
-                    "speedup_vs_header_chain": 139.86769775458865
-                }
-            ],
-            "two_layer_breakdown": {
-                "layer1_mmr_verify": {
-                    "mean_us": 2.49,
-                    "trimmed_mean_us": 2.48325,
-                    "min_us": 2,
-                    "max_us": 8,
-                    "std_us": 0.25991365916480974
-                },
-                "layer2_ads_root_expand": {
-                    "mean_us": 0.1956,
-                    "trimmed_mean_us": 0.2,
-                    "min_us": 0,
-                    "max_us": 0,
-                    "std_us": 0.0214840202534931
-                },
-                "total": {
-                    "mean_us": 2.8024,
-                    "trimmed_mean_us": 2.79425,
-                    "min_us": 2,
-                    "max_us": 8,
-                    "std_us": 0.2636916885554519
-                },
-                "layer2_overhead_percent": 7.15755569473025
-            },
-            "measured_base_times": {
-                "single_hash": {
-                    "mean_us": 0.18780000000000002,
-                    "trimmed_mean_us": 0.1685,
-                    "min_us": 0,
-                    "max_us": 11,
-                    "std_us": 0.5003717655979572
-                },
-                "header_hash_scattered": {
-                    "mean_us": 0.3836,
-                    "trimmed_mean_us": 0.3,
-                    "min_us": 0,
-                    "max_us": 14,
-                    "std_us": 0.9454940284929478
-                },
-                "header_hash_unified": {
-                    "mean_us": 0.1856,
-                    "trimmed_mean_us": 0.17475,
-                    "min_us": 0,
-                    "max_us": 8,
-                    "std_us": 0.3576149001840765
-                },
-                "ads_root_expand": {
-                    "mean_us": 0.165,
-                    "trimmed_mean_us": 0.16875,
-                    "min_us": 0,
-                    "max_us": 0,
-                    "std_us": 0.04774472869580968
-                }
-            },
-            "mmr_verify_stats": {
-                "mean_us": 2.4784,
-                "trimmed_mean_us": 2.48075,
-                "min_us": 2,
-                "max_us": 2,
-                "std_us": 0.04998436629334708
-            }
-        },
-        {
-            "chain_length": 3000,
-            "log2_n": 11.550746785383243,
-            "test_block_height": 1500,
-            "actual_mmr_proof_items": 12,
-            "schemes": [
-                {
-                    "scheme_name": "HeaderChain",
-                    "chain_verify_time_us": 450.3,
-                    "block_verify_time_us": 0.0,
-                    "total_verify_time_us": 450.3,
-                    "speedup_vs_header_chain": 1.0
-                },
-                {
-                    "scheme_name": "Merkle",
-                    "chain_verify_time_us": 1.908,
-                    "block_verify_time_us": 0.3,
-                    "total_verify_time_us": 2.2079999999999997,
-                    "speedup_vs_header_chain": 203.94021739130437
-                },
-                {
-                    "scheme_name": "MMR-Scattered",
-                    "chain_verify_time_us": 2.49775,
-                    "block_verify_time_us": 0.3,
-                    "total_verify_time_us": 2.7977499999999997,
-                    "speedup_vs_header_chain": 160.9507640067912
-                },
-                {
-                    "scheme_name": "Two-Layer",
-                    "chain_verify_time_us": 2.56425,
-                    "block_verify_time_us": 0.2,
-                    "total_verify_time_us": 2.76425,
-                    "speedup_vs_header_chain": 162.901329474541
-                }
-            ],
-            "two_layer_breakdown": {
-                "layer1_mmr_verify": {
-                    "mean_us": 2.6334,
-                    "trimmed_mean_us": 2.56425,
-                    "min_us": 2,
-                    "max_us": 15,
-                    "std_us": 0.6202207571301934
-                },
-                "layer2_ads_root_expand": {
-                    "mean_us": 0.2122,
-                    "trimmed_mean_us": 0.2,
-                    "min_us": 0,
-                    "max_us": 2,
-                    "std_us": 0.12141104267143492
-                },
-                "total": {
-                    "mean_us": 2.9658,
-                    "trimmed_mean_us": 2.89125,
-                    "min_us": 2,
-                    "max_us": 15,
-                    "std_us": 0.6271179425177159
-                },
-                "layer2_overhead_percent": 6.9174232598357115
-            },
-            "measured_base_times": {
-                "single_hash": {
-                    "mean_us": 0.15780000000000002,
-                    "trimmed_mean_us": 0.159,
-                    "min_us": 0,
-                    "max_us": 0,
-                    "std_us": 0.051812441151872425
-                },
-                "header_hash_scattered": {
-                    "mean_us": 0.2978,
-                    "trimmed_mean_us": 0.3,
-                    "min_us": 0,
-                    "max_us": 0,
-                    "std_us": 0.015989726160424635
-                },
-                "header_hash_unified": {
-                    "mean_us": 0.1706,
-                    "trimmed_mean_us": 0.17575,
-                    "min_us": 0,
-                    "max_us": 0,
-                    "std_us": 0.04560481991191704
-                },
-                "ads_root_expand": {
-                    "mean_us": 0.1628,
-                    "trimmed_mean_us": 0.16225,
-                    "min_us": 0,
-                    "max_us": 1,
-                    "std_us": 0.08456039807051276
-                }
-            },
-            "mmr_verify_stats": {
-                "mean_us": 2.8556,
-                "trimmed_mean_us": 2.49775,
-                "min_us": 2,
-                "max_us": 121,
-                "std_us": 5.452475365852704
-            }
-        },
-        {
-            "chain_length": 4000,
-            "log2_n": 11.965784284662087,
-            "test_block_height": 2000,
-            "actual_mmr_proof_items": 12,
-            "schemes": [
-                {
-                    "scheme_name": "HeaderChain",
-                    "chain_verify_time_us": 600.3,
-                    "block_verify_time_us": 0.0,
-                    "total_verify_time_us": 600.3,
-                    "speedup_vs_header_chain": 1.0
-                },
-                {
-                    "scheme_name": "Merkle",
-                    "chain_verify_time_us": 1.911,
-                    "block_verify_time_us": 0.3,
-                    "total_verify_time_us": 2.211,
-                    "speedup_vs_header_chain": 271.50610583446405
-                },
-                {
-                    "scheme_name": "MMR-Scattered",
-                    "chain_verify_time_us": 2.5015,
-                    "block_verify_time_us": 0.3,
-                    "total_verify_time_us": 2.8015,
-                    "speedup_vs_header_chain": 214.27806532214885
-                },
-                {
-                    "scheme_name": "Two-Layer",
-                    "chain_verify_time_us": 2.50025,
-                    "block_verify_time_us": 0.2,
-                    "total_verify_time_us": 2.70025,
-                    "speedup_vs_header_chain": 222.31274881955372
-                }
-            ],
-            "two_layer_breakdown": {
-                "layer1_mmr_verify": {
-                    "mean_us": 2.5196,
-                    "trimmed_mean_us": 2.50025,
-                    "min_us": 2,
-                    "max_us": 11,
-                    "std_us": 0.4202964885370239
-                },
-                "layer2_ads_root_expand": {
-                    "mean_us": 0.1958,
-                    "trimmed_mean_us": 0.2,
-                    "min_us": 0,
-                    "max_us": 0,
-                    "std_us": 0.02287808588206764
-                },
-                "total": {
-                    "mean_us": 2.8312,
-                    "trimmed_mean_us": 2.81475,
-                    "min_us": 2,
-                    "max_us": 12,
-                    "std_us": 0.4154175049354724
-                },
-                "layer2_overhead_percent": 7.105426769695356
-            },
-            "measured_base_times": {
-                "single_hash": {
-                    "mean_us": 0.1576,
-                    "trimmed_mean_us": 0.15925,
-                    "min_us": 0,
-                    "max_us": 0,
-                    "std_us": 0.04987198039839327
-                },
-                "header_hash_scattered": {
-                    "mean_us": 0.3162,
-                    "trimmed_mean_us": 0.3,
-                    "min_us": 0,
-                    "max_us": 9,
-                    "std_us": 0.4074427311393765
-                },
-                "header_hash_unified": {
-                    "mean_us": 0.169,
-                    "trimmed_mean_us": 0.17325,
-                    "min_us": 0,
-                    "max_us": 0,
-                    "std_us": 0.04715343989347516
-                },
-                "ads_root_expand": {
-                    "mean_us": 0.179,
-                    "trimmed_mean_us": 0.18625,
-                    "min_us": 0,
-                    "max_us": 0,
-                    "std_us": 0.04077161573078258
-                }
-            },
-            "mmr_verify_stats": {
-                "mean_us": 2.7268000000000003,
-                "trimmed_mean_us": 2.5015,
-                "min_us": 2,
-                "max_us": 110,
-                "std_us": 4.81340414664693
-            }
-        },
-        {
-            "chain_length": 5000,
-            "log2_n": 12.287712379549449,
-            "test_block_height": 2500,
-            "actual_mmr_proof_items": 13,
-            "schemes": [
-                {
-                    "scheme_name": "HeaderChain",
-                    "chain_verify_time_us": 750.3,
-                    "block_verify_time_us": 0.0,
-                    "total_verify_time_us": 750.3,
-                    "speedup_vs_header_chain": 1.0
-                },
-                {
-                    "scheme_name": "Merkle",
-                    "chain_verify_time_us": 2.0995,
-                    "block_verify_time_us": 0.3,
-                    "total_verify_time_us": 2.3994999999999997,
-                    "speedup_vs_header_chain": 312.69014377995416
-                },
-                {
-                    "scheme_name": "MMR-Scattered",
-                    "chain_verify_time_us": 2.6645,
-                    "block_verify_time_us": 0.3,
-                    "total_verify_time_us": 2.9644999999999997,
-                    "speedup_vs_header_chain": 253.0949569910609
-                },
-                {
-                    "scheme_name": "Two-Layer",
-                    "chain_verify_time_us": 2.66125,
-                    "block_verify_time_us": 0.2,
-                    "total_verify_time_us": 2.86125,
-                    "speedup_vs_header_chain": 262.2280471821756
-                }
-            ],
-            "two_layer_breakdown": {
-                "layer1_mmr_verify": {
-                    "mean_us": 2.6604,
-                    "trimmed_mean_us": 2.66125,
-                    "min_us": 2,
-                    "max_us": 3,
-                    "std_us": 0.05725728594325065
-                },
-                "layer2_ads_root_expand": {
-                    "mean_us": 0.2176,
-                    "trimmed_mean_us": 0.2,
-                    "min_us": 0,
-                    "max_us": 11,
-                    "std_us": 0.5150736274391923
-                },
-                "total": {
-                    "mean_us": 2.9968000000000004,
-                    "trimmed_mean_us": 2.97675,
-                    "min_us": 2,
-                    "max_us": 14,
-                    "std_us": 0.5228541986309895
-                },
-                "layer2_overhead_percent": 6.718736877467037
-            },
-            "measured_base_times": {
-                "single_hash": {
-                    "mean_us": 0.1596,
-                    "trimmed_mean_us": 0.1615,
-                    "min_us": 0,
-                    "max_us": 0,
-                    "std_us": 0.04992820496775945
-                },
-                "header_hash_scattered": {
-                    "mean_us": 0.2964,
-                    "trimmed_mean_us": 0.3,
-                    "min_us": 0,
-                    "max_us": 0,
-                    "std_us": 0.025852983454661842
-                },
-                "header_hash_unified": {
-                    "mean_us": 0.1674,
-                    "trimmed_mean_us": 0.17175,
-                    "min_us": 0,
-                    "max_us": 0,
-                    "std_us": 0.04692167182201796
-                },
-                "ads_root_expand": {
-                    "mean_us": 0.16019999999999998,
-                    "trimmed_mean_us": 0.1625,
-                    "min_us": 0,
-                    "max_us": 0,
-                    "std_us": 0.049404875097167816
-                }
-            },
-            "mmr_verify_stats": {
-                "mean_us": 2.8008,
-                "trimmed_mean_us": 2.6645,
-                "min_us": 2,
-                "max_us": 48,
-                "std_us": 2.172897219071638
-            }
-        },
-        {
-            "chain_length": 6000,
-            "log2_n": 12.550746785383243,
-            "test_block_height": 3000,
-            "actual_mmr_proof_items": 13,
-            "schemes": [
-                {
-                    "scheme_name": "HeaderChain",
-                    "chain_verify_time_us": 900.3,
-                    "block_verify_time_us": 0.0,
-                    "total_verify_time_us": 900.3,
-                    "speedup_vs_header_chain": 1.0
-                },
-                {
-                    "scheme_name": "Merkle",
-                    "chain_verify_time_us": 2.2359999999999998,
-                    "block_verify_time_us": 0.3,
-                    "total_verify_time_us": 2.5359999999999996,
-                    "speedup_vs_header_chain": 355.0078864353313
-                },
-                {
-                    "scheme_name": "MMR-Scattered",
-                    "chain_verify_time_us": 2.664,
-                    "block_verify_time_us": 0.3,
-                    "total_verify_time_us": 2.964,
-                    "speedup_vs_header_chain": 303.744939271255
-                },
-                {
-                    "scheme_name": "Two-Layer",
-                    "chain_verify_time_us": 2.66175,
-                    "block_verify_time_us": 0.2,
-                    "total_verify_time_us": 2.8617500000000002,
-                    "speedup_vs_header_chain": 314.59771119070496
-                }
-            ],
-            "two_layer_breakdown": {
-                "layer1_mmr_verify": {
-                    "mean_us": 2.6966,
-                    "trimmed_mean_us": 2.66175,
-                    "min_us": 2,
-                    "max_us": 19,
-                    "std_us": 0.7550288584910576
-                },
-                "layer2_ads_root_expand": {
-                    "mean_us": 0.2002,
-                    "trimmed_mean_us": 0.2,
-                    "min_us": 0,
-                    "max_us": 0,
-                    "std_us": 0.02238217871092307
-                },
-                "total": {
-                    "mean_us": 3.0061999999999998,
-                    "trimmed_mean_us": 2.97175,
-                    "min_us": 2,
-                    "max_us": 19,
-                    "std_us": 0.7590876023068427
-                },
-                "layer2_overhead_percent": 6.730041221502482
-            },
-            "measured_base_times": {
-                "single_hash": {
-                    "mean_us": 0.1684,
-                    "trimmed_mean_us": 0.172,
-                    "min_us": 0,
-                    "max_us": 0,
-                    "std_us": 0.049460415135042
-                },
-                "header_hash_scattered": {
-                    "mean_us": 0.30760000000000004,
-                    "trimmed_mean_us": 0.3,
-                    "min_us": 0,
-                    "max_us": 0,
-                    "std_us": 0.02652635094748585
-                },
-                "header_hash_unified": {
-                    "mean_us": 0.1744,
-                    "trimmed_mean_us": 0.1805,
-                    "min_us": 0,
-                    "max_us": 0,
-                    "std_us": 0.043685889184353836
-                },
-                "ads_root_expand": {
-                    "mean_us": 0.1686,
-                    "trimmed_mean_us": 0.17325,
-                    "min_us": 0,
-                    "max_us": 0,
-                    "std_us": 0.04645811784206113
-                }
-            },
-            "mmr_verify_stats": {
-                "mean_us": 2.8846,
-                "trimmed_mean_us": 2.664,
-                "min_us": 2,
-                "max_us": 108,
-                "std_us": 4.738232215611437
-            }
-        },
-        {
-            "chain_length": 7000,
-            "log2_n": 12.77313920671969,
-            "test_block_height": 3500,
-            "actual_mmr_proof_items": 13,
-            "schemes": [
-                {
-                    "scheme_name": "HeaderChain",
-                    "chain_verify_time_us": 1225.35,
-                    "block_verify_time_us": 0.0,
-                    "total_verify_time_us": 1225.35,
-                    "speedup_vs_header_chain": 1.0
-                },
-                {
-                    "scheme_name": "Merkle",
-                    "chain_verify_time_us": 2.53825,
-                    "block_verify_time_us": 0.35,
-                    "total_verify_time_us": 2.88825,
-                    "speedup_vs_header_chain": 424.25344066476237
-                },
-                {
-                    "scheme_name": "MMR-Scattered",
-                    "chain_verify_time_us": 3.532,
-                    "block_verify_time_us": 0.35,
-                    "total_verify_time_us": 3.882,
-                    "speedup_vs_header_chain": 315.6491499227202
-                },
-                {
-                    "scheme_name": "Two-Layer",
-                    "chain_verify_time_us": 3.8645,
-                    "block_verify_time_us": 0.29475,
-                    "total_verify_time_us": 4.15925,
-                    "speedup_vs_header_chain": 294.6084029572639
-                }
-            ],
-            "two_layer_breakdown": {
-                "layer1_mmr_verify": {
-                    "mean_us": 4.0684000000000005,
-                    "trimmed_mean_us": 3.8645,
-                    "min_us": 3,
-                    "max_us": 82,
-                    "std_us": 3.5839043207598307
-                },
-                "layer2_ads_root_expand": {
-                    "mean_us": 0.2864,
-                    "trimmed_mean_us": 0.29475,
-                    "min_us": 0,
-                    "max_us": 0,
-                    "std_us": 0.036574792287335386
-                },
-                "total": {
-                    "mean_us": 4.5216,
-                    "trimmed_mean_us": 4.317,
-                    "min_us": 4,
-                    "max_us": 83,
-                    "std_us": 3.6164694305751888
-                },
-                "layer2_overhead_percent": 6.82765809589993
-            },
-            "measured_base_times": {
-                "single_hash": {
-                    "mean_us": 0.18680000000000002,
-                    "trimmed_mean_us": 0.19525,
-                    "min_us": 0,
-                    "max_us": 0,
-                    "std_us": 0.035613151969270646
-                },
-                "header_hash_scattered": {
-                    "mean_us": 0.35,
-                    "trimmed_mean_us": 0.35,
-                    "min_us": 0,
-                    "max_us": 0,
-                    "std_us": 0.05005007512521915
-                },
-                "header_hash_unified": {
-                    "mean_us": 0.2144,
-                    "trimmed_mean_us": 0.2055,
-                    "min_us": 0,
-                    "max_us": 0,
-                    "std_us": 0.03514413493658468
-                },
-                "ads_root_expand": {
-                    "mean_us": 0.2068,
-                    "trimmed_mean_us": 0.2,
-                    "min_us": 0,
-                    "max_us": 0,
-                    "std_us": 0.025199802779391666
-                }
-            },
-            "mmr_verify_stats": {
-                "mean_us": 3.5556,
-                "trimmed_mean_us": 3.532,
-                "min_us": 3,
-                "max_us": 16,
-                "std_us": 0.5638301596206103
-            }
-        },
-        {
-            "chain_length": 8000,
-            "log2_n": 12.965784284662087,
-            "test_block_height": 4000,
-            "actual_mmr_proof_items": 13,
-            "schemes": [
-                {
-                    "scheme_name": "HeaderChain",
-                    "chain_verify_time_us": 1200.3,
-                    "block_verify_time_us": 0.0,
-                    "total_verify_time_us": 1200.3,
-                    "speedup_vs_header_chain": 1.0
-                },
-                {
-                    "scheme_name": "Merkle",
-                    "chain_verify_time_us": 2.07675,
-                    "block_verify_time_us": 0.3,
-                    "total_verify_time_us": 2.37675,
-                    "speedup_vs_header_chain": 505.0173556326917
-                },
-                {
-                    "scheme_name": "MMR-Scattered",
-                    "chain_verify_time_us": 2.64675,
-                    "block_verify_time_us": 0.3,
-                    "total_verify_time_us": 2.9467499999999998,
-                    "speedup_vs_header_chain": 407.3301094426063
-                },
-                {
-                    "scheme_name": "Two-Layer",
-                    "chain_verify_time_us": 2.664,
-                    "block_verify_time_us": 0.2,
-                    "total_verify_time_us": 2.8640000000000003,
-                    "speedup_vs_header_chain": 419.0991620111731
-                }
-            ],
-            "two_layer_breakdown": {
-                "layer1_mmr_verify": {
-                    "mean_us": 8.961200000000002,
-                    "trimmed_mean_us": 2.664,
-                    "min_us": 2,
-                    "max_us": 3151,
-                    "std_us": 140.824739406888
-                },
-                "layer2_ads_root_expand": {
-                    "mean_us": 0.1966,
-                    "trimmed_mean_us": 0.2,
-                    "min_us": 0,
-                    "max_us": 0,
-                    "std_us": 0.02023013882883819
-                },
-                "total": {
-                    "mean_us": 9.276399999999999,
-                    "trimmed_mean_us": 2.98175,
-                    "min_us": 2,
-                    "max_us": 3151,
-                    "std_us": 140.82405715355097
-                },
-                "layer2_overhead_percent": 6.707470445208351
-            },
-            "measured_base_times": {
-                "single_hash": {
-                    "mean_us": 0.158,
-                    "trimmed_mean_us": 0.15975,
-                    "min_us": 0,
-                    "max_us": 0,
-                    "std_us": 0.04980925540346588
-                },
-                "header_hash_scattered": {
-                    "mean_us": 0.32080000000000003,
-                    "trimmed_mean_us": 0.3,
-                    "min_us": 0,
-                    "max_us": 14,
-                    "std_us": 0.6135145966646851
-                },
-                "header_hash_unified": {
-                    "mean_us": 0.1676,
-                    "trimmed_mean_us": 0.172,
-                    "min_us": 0,
-                    "max_us": 0,
-                    "std_us": 0.046846870317205205
-                },
-                "ads_root_expand": {
-                    "mean_us": 0.15819999999999998,
-                    "trimmed_mean_us": 0.16025,
-                    "min_us": 0,
-                    "max_us": 0,
-                    "std_us": 0.04937241406434441
-                }
-            },
-            "mmr_verify_stats": {
-                "mean_us": 2.8552,
-                "trimmed_mean_us": 2.64675,
-                "min_us": 2,
-                "max_us": 104,
-                "std_us": 4.559989030679796
-            }
-        },
-        {
-            "chain_length": 9000,
-            "log2_n": 13.1357092861044,
-            "test_block_height": 4500,
-            "actual_mmr_proof_items": 14,
-            "schemes": [
-                {
-                    "scheme_name": "HeaderChain",
-                    "chain_verify_time_us": 1675.4972500000001,
-                    "block_verify_time_us": 0.0,
-                    "total_verify_time_us": 1675.4972500000001,
-                    "speedup_vs_header_chain": 1.0
-                },
-                {
-                    "scheme_name": "Merkle",
-                    "chain_verify_time_us": 2.8245,
-                    "block_verify_time_us": 0.37225,
-                    "total_verify_time_us": 3.19675,
-                    "speedup_vs_header_chain": 524.1252052866192
-                },
-                {
-                    "scheme_name": "MMR-Scattered",
-                    "chain_verify_time_us": 2.82125,
-                    "block_verify_time_us": 0.37225,
-                    "total_verify_time_us": 3.1935000000000002,
-                    "speedup_vs_header_chain": 524.6586034131831
-                },
-                {
-                    "scheme_name": "Two-Layer",
-                    "chain_verify_time_us": 2.81625,
-                    "block_verify_time_us": 0.2,
-                    "total_verify_time_us": 3.0162500000000003,
-                    "speedup_vs_header_chain": 555.490178201409
-                }
-            ],
-            "two_layer_breakdown": {
-                "layer1_mmr_verify": {
-                    "mean_us": 2.8374,
-                    "trimmed_mean_us": 2.81625,
-                    "min_us": 2,
-                    "max_us": 9,
-                    "std_us": 0.30680531122846477
-                },
-                "layer2_ads_root_expand": {
-                    "mean_us": 0.1978,
-                    "trimmed_mean_us": 0.2,
-                    "min_us": 0,
-                    "max_us": 0,
-                    "std_us": 0.021355845670180652
-                },
-                "total": {
-                    "mean_us": 3.1515999999999997,
-                    "trimmed_mean_us": 3.134,
-                    "min_us": 3,
-                    "max_us": 9,
-                    "std_us": 0.30666843832081125
-                },
-                "layer2_overhead_percent": 6.381620931716657
-            },
-            "measured_base_times": {
-                "single_hash": {
-                    "mean_us": 0.21280000000000002,
-                    "trimmed_mean_us": 0.20175,
-                    "min_us": 0,
-                    "max_us": 0,
-                    "std_us": 0.06484264906893168
-                },
-                "header_hash_scattered": {
-                    "mean_us": 0.3678,
-                    "trimmed_mean_us": 0.37225,
-                    "min_us": 0,
-                    "max_us": 0,
-                    "std_us": 0.046771092248741354
-                },
-                "header_hash_unified": {
-                    "mean_us": 0.2066,
-                    "trimmed_mean_us": 0.2,
-                    "min_us": 0,
-                    "max_us": 0,
-                    "std_us": 0.024853075276540744
-                },
-                "ads_root_expand": {
-                    "mean_us": 0.2018,
-                    "trimmed_mean_us": 0.2,
-                    "min_us": 0,
-                    "max_us": 0,
-                    "std_us": 0.025652994996775823
-                }
-            },
-            "mmr_verify_stats": {
-                "mean_us": 3.0141999999999998,
-                "trimmed_mean_us": 2.82125,
-                "min_us": 2,
-                "max_us": 50,
-                "std_us": 2.325337125126361
-            }
-        },
-        {
-            "chain_length": 10000,
-            "log2_n": 13.287712379549449,
-            "test_block_height": 5000,
-            "actual_mmr_proof_items": 14,
-            "schemes": [
-                {
-                    "scheme_name": "HeaderChain",
-                    "chain_verify_time_us": 1500.3,
-                    "block_verify_time_us": 0.0,
-                    "total_verify_time_us": 1500.3,
-                    "speedup_vs_header_chain": 1.0
-                },
-                {
-                    "scheme_name": "Merkle",
-                    "chain_verify_time_us": 2.408,
-                    "block_verify_time_us": 0.3,
-                    "total_verify_time_us": 2.7079999999999997,
-                    "speedup_vs_header_chain": 554.0251107828656
-                },
-                {
-                    "scheme_name": "MMR-Scattered",
-                    "chain_verify_time_us": 2.818,
-                    "block_verify_time_us": 0.3,
-                    "total_verify_time_us": 3.118,
-                    "speedup_vs_header_chain": 481.17382937780627
-                },
-                {
-                    "scheme_name": "Two-Layer",
-                    "chain_verify_time_us": 2.81975,
-                    "block_verify_time_us": 0.2,
-                    "total_verify_time_us": 3.01975,
-                    "speedup_vs_header_chain": 496.8292077158705
-                }
-            ],
-            "two_layer_breakdown": {
-                "layer1_mmr_verify": {
-                    "mean_us": 2.8396,
-                    "trimmed_mean_us": 2.81975,
-                    "min_us": 2,
-                    "max_us": 9,
-                    "std_us": 0.31968145467782394
-                },
-                "layer2_ads_root_expand": {
-                    "mean_us": 0.197,
-                    "trimmed_mean_us": 0.2,
-                    "min_us": 0,
-                    "max_us": 0,
-                    "std_us": 0.021258029250502748
-                },
-                "total": {
-                    "mean_us": 3.1502,
-                    "trimmed_mean_us": 3.13175,
-                    "min_us": 3,
-                    "max_us": 10,
-                    "std_us": 0.3197881939314769
-                },
-                "layer2_overhead_percent": 6.38620579548176
-            },
-            "measured_base_times": {
-                "single_hash": {
-                    "mean_us": 0.1978,
-                    "trimmed_mean_us": 0.172,
-                    "min_us": 0,
-                    "max_us": 5,
-                    "std_us": 0.2407718883184013
-                },
-                "header_hash_scattered": {
-                    "mean_us": 0.2958,
-                    "trimmed_mean_us": 0.3,
-                    "min_us": 0,
-                    "max_us": 0,
-                    "std_us": 0.023737880569838225
-                },
-                "header_hash_unified": {
-                    "mean_us": 0.1684,
-                    "trimmed_mean_us": 0.173,
-                    "min_us": 0,
-                    "max_us": 0,
-                    "std_us": 0.046537850649618545
-                },
-                "ads_root_expand": {
-                    "mean_us": 0.1792,
-                    "trimmed_mean_us": 0.1865,
-                    "min_us": 0,
-                    "max_us": 0,
-                    "std_us": 0.04062833152672282
-                }
-            },
-            "mmr_verify_stats": {
-                "mean_us": 2.8722,
-                "trimmed_mean_us": 2.818,
-                "min_us": 2,
-                "max_us": 20,
-                "std_us": 0.8079807087123436
-            }
-        },
-        {
-            "chain_length": 12000,
-            "log2_n": 13.550746785383243,
-            "test_block_height": 6000,
-            "actual_mmr_proof_items": 14,
-            "schemes": [
-                {
-                    "scheme_name": "HeaderChain",
-                    "chain_verify_time_us": 1800.3,
-                    "block_verify_time_us": 0.0,
-                    "total_verify_time_us": 1800.3,
-                    "speedup_vs_header_chain": 1.0
-                },
-                {
-                    "scheme_name": "Merkle",
-                    "chain_verify_time_us": 2.205,
-                    "block_verify_time_us": 0.3,
-                    "total_verify_time_us": 2.505,
-                    "speedup_vs_header_chain": 718.6826347305389
-                },
-                {
-                    "scheme_name": "MMR-Scattered",
-                    "chain_verify_time_us": 2.82175,
-                    "block_verify_time_us": 0.3,
-                    "total_verify_time_us": 3.12175,
-                    "speedup_vs_header_chain": 576.6957635941379
-                },
-                {
-                    "scheme_name": "Two-Layer",
-                    "chain_verify_time_us": 2.83625,
-                    "block_verify_time_us": 0.2,
-                    "total_verify_time_us": 3.0362500000000003,
-                    "speedup_vs_header_chain": 592.9353643474681
-                }
-            ],
-            "two_layer_breakdown": {
-                "layer1_mmr_verify": {
-                    "mean_us": 2.8884000000000003,
-                    "trimmed_mean_us": 2.83625,
-                    "min_us": 2,
-                    "max_us": 26,
-                    "std_us": 1.0383360358992044
-                },
-                "layer2_ads_root_expand": {
-                    "mean_us": 0.199,
-                    "trimmed_mean_us": 0.2,
-                    "min_us": 0,
-                    "max_us": 0,
-                    "std_us": 0.026465086465061974
-                },
-                "total": {
-                    "mean_us": 3.2014,
-                    "trimmed_mean_us": 3.15,
-                    "min_us": 3,
-                    "max_us": 26,
-                    "std_us": 1.0559204401620021
-                },
-                "layer2_overhead_percent": 6.349206349206351
-            },
-            "measured_base_times": {
-                "single_hash": {
-                    "mean_us": 0.156,
-                    "trimmed_mean_us": 0.1575,
-                    "min_us": 0,
-                    "max_us": 0,
-                    "std_us": 0.04968840786090356
-                },
-                "header_hash_scattered": {
-                    "mean_us": 0.296,
-                    "trimmed_mean_us": 0.3,
-                    "min_us": 0,
-                    "max_us": 0,
-                    "std_us": 0.022472427996104032
-                },
-                "header_hash_unified": {
-                    "mean_us": 0.1706,
-                    "trimmed_mean_us": 0.17575,
-                    "min_us": 0,
-                    "max_us": 0,
-                    "std_us": 0.04560481991191704
-                },
-                "ads_root_expand": {
-                    "mean_us": 0.1608,
-                    "trimmed_mean_us": 0.1635,
-                    "min_us": 0,
-                    "max_us": 0,
-                    "std_us": 0.04886856118758855
-                }
-            },
-            "mmr_verify_stats": {
-                "mean_us": 3.0625999999999998,
-                "trimmed_mean_us": 2.82175,
-                "min_us": 2,
-                "max_us": 107,
-                "std_us": 4.702199762367662
-            }
-        },
-        {
-            "chain_length": 14000,
-            "log2_n": 13.77313920671969,
-            "test_block_height": 7000,
-            "actual_mmr_proof_items": 14,
-            "schemes": [
-                {
-                    "scheme_name": "HeaderChain",
-                    "chain_verify_time_us": 2100.2999999999997,
-                    "block_verify_time_us": 0.0,
-                    "total_verify_time_us": 2100.2999999999997,
-                    "speedup_vs_header_chain": 1.0
-                },
-                {
-                    "scheme_name": "Merkle",
-                    "chain_verify_time_us": 2.2505,
-                    "block_verify_time_us": 0.3,
-                    "total_verify_time_us": 2.5505,
-                    "speedup_vs_header_chain": 823.4855910605762
-                },
-                {
-                    "scheme_name": "MMR-Scattered",
-                    "chain_verify_time_us": 2.81775,
-                    "block_verify_time_us": 0.3,
-                    "total_verify_time_us": 3.11775,
-                    "speedup_vs_header_chain": 673.658888621602
-                },
-                {
-                    "scheme_name": "Two-Layer",
-                    "chain_verify_time_us": 2.82675,
-                    "block_verify_time_us": 0.2,
-                    "total_verify_time_us": 3.0267500000000003,
-                    "speedup_vs_header_chain": 693.9126125382008
-                }
-            ],
-            "two_layer_breakdown": {
-                "layer1_mmr_verify": {
-                    "mean_us": 2.8668,
-                    "trimmed_mean_us": 2.82675,
-                    "min_us": 2,
-                    "max_us": 19,
-                    "std_us": 0.765080686538244
-                },
-                "layer2_ads_root_expand": {
-                    "mean_us": 0.1978,
-                    "trimmed_mean_us": 0.2,
-                    "min_us": 0,
-                    "max_us": 0,
-                    "std_us": 0.017197427220546953
-                },
-                "total": {
-                    "mean_us": 3.1761999999999997,
-                    "trimmed_mean_us": 3.137,
-                    "min_us": 3,
-                    "max_us": 20,
-                    "std_us": 0.764815956223317
-                },
-                "layer2_overhead_percent": 6.375518010838381
-            },
-            "measured_base_times": {
-                "single_hash": {
-                    "mean_us": 0.1586,
-                    "trimmed_mean_us": 0.16075,
-                    "min_us": 0,
-                    "max_us": 0,
-                    "std_us": 0.049304176330278525
-                },
-                "header_hash_scattered": {
-                    "mean_us": 0.2968,
-                    "trimmed_mean_us": 0.3,
-                    "min_us": 0,
-                    "max_us": 0,
-                    "std_us": 0.01976211229004455
-                },
-                "header_hash_unified": {
-                    "mean_us": 0.1672,
-                    "trimmed_mean_us": 0.1715,
-                    "min_us": 0,
-                    "max_us": 0,
-                    "std_us": 0.046995501426291976
-                },
-                "ads_root_expand": {
-                    "mean_us": 0.1316,
-                    "trimmed_mean_us": 0.127,
-                    "min_us": 0,
-                    "max_us": 0,
-                    "std_us": 0.046537850649618545
-                }
-            },
-            "mmr_verify_stats": {
-                "mean_us": 3.0478,
-                "trimmed_mean_us": 2.81775,
-                "min_us": 2,
-                "max_us": 113,
-                "std_us": 4.949955482482359
-            }
-        },
-        {
-            "chain_length": 16000,
-            "log2_n": 13.965784284662087,
-            "test_block_height": 8000,
-            "actual_mmr_proof_items": 14,
-            "schemes": [
-                {
-                    "scheme_name": "HeaderChain",
-                    "chain_verify_time_us": 2400.2999999999997,
-                    "block_verify_time_us": 0.0,
-                    "total_verify_time_us": 2400.2999999999997,
-                    "speedup_vs_header_chain": 1.0
-                },
-                {
-                    "scheme_name": "Merkle",
-                    "chain_verify_time_us": 2.2365,
-                    "block_verify_time_us": 0.3,
-                    "total_verify_time_us": 2.5364999999999998,
-                    "speedup_vs_header_chain": 946.3039621525725
-                },
-                {
-                    "scheme_name": "MMR-Scattered",
-                    "chain_verify_time_us": 3.57425,
-                    "block_verify_time_us": 0.3,
-                    "total_verify_time_us": 3.87425,
-                    "speedup_vs_header_chain": 619.5521713880105
-                },
-                {
-                    "scheme_name": "Two-Layer",
-                    "chain_verify_time_us": 2.8205,
-                    "block_verify_time_us": 0.2,
-                    "total_verify_time_us": 3.0205,
-                    "speedup_vs_header_chain": 794.669756662804
-                }
-            ],
-            "two_layer_breakdown": {
-                "layer1_mmr_verify": {
-                    "mean_us": 2.8851999999999998,
-                    "trimmed_mean_us": 2.8205,
-                    "min_us": 2,
-                    "max_us": 25,
-                    "std_us": 1.0550484417451416
-                },
-                "layer2_ads_root_expand": {
-                    "mean_us": 0.1978,
-                    "trimmed_mean_us": 0.2,
-                    "min_us": 0,
-                    "max_us": 0,
-                    "std_us": 0.01938844562225893
-                },
-                "total": {
-                    "mean_us": 3.1958,
-                    "trimmed_mean_us": 3.133,
-                    "min_us": 3,
-                    "max_us": 25,
-                    "std_us": 1.054697650641422
-                },
-                "layer2_overhead_percent": 6.383657835939995
-            },
-            "measured_base_times": {
-                "single_hash": {
-                    "mean_us": 0.158,
-                    "trimmed_mean_us": 0.15975,
-                    "min_us": 0,
-                    "max_us": 0,
-                    "std_us": 0.04980925540346588
-                },
-                "header_hash_scattered": {
-                    "mean_us": 0.4092,
-                    "trimmed_mean_us": 0.3,
-                    "min_us": 0,
-                    "max_us": 56,
-                    "std_us": 2.500131331219747
-                },
-                "header_hash_unified": {
-                    "mean_us": 0.1678,
-                    "trimmed_mean_us": 0.172,
-                    "min_us": 0,
-                    "max_us": 0,
-                    "std_us": 0.047197618906687624
-                },
-                "ads_root_expand": {
-                    "mean_us": 0.15780000000000002,
-                    "trimmed_mean_us": 0.1595,
-                    "min_us": 0,
-                    "max_us": 0,
-                    "std_us": 0.049841029850044495
-                }
-            },
-            "mmr_verify_stats": {
-                "mean_us": 3.6664,
-                "trimmed_mean_us": 3.57425,
-                "min_us": 2,
-                "max_us": 23,
-                "std_us": 1.4337581262993726
-            }
-        },
-        {
-            "chain_length": 18000,
-            "log2_n": 14.1357092861044,
-            "test_block_height": 9000,
-            "actual_mmr_proof_items": 15,
-            "schemes": [
-                {
-                    "scheme_name": "HeaderChain",
-                    "chain_verify_time_us": 2700.2999999999997,
-                    "block_verify_time_us": 0.0,
-                    "total_verify_time_us": 2700.2999999999997,
-                    "speedup_vs_header_chain": 1.0
-                },
-                {
-                    "scheme_name": "Merkle",
-                    "chain_verify_time_us": 2.32875,
-                    "block_verify_time_us": 0.3,
-                    "total_verify_time_us": 2.6287499999999997,
-                    "speedup_vs_header_chain": 1027.2182596291013
-                },
-                {
-                    "scheme_name": "MMR-Scattered",
-                    "chain_verify_time_us": 3.066,
-                    "block_verify_time_us": 0.3,
-                    "total_verify_time_us": 3.3659999999999997,
-                    "speedup_vs_header_chain": 802.2281639928699
-                },
-                {
-                    "scheme_name": "Two-Layer",
-                    "chain_verify_time_us": 3.00075,
-                    "block_verify_time_us": 0.2,
-                    "total_verify_time_us": 3.20075,
-                    "speedup_vs_header_chain": 843.6460204639536
-                }
-            ],
-            "two_layer_breakdown": {
-                "layer1_mmr_verify": {
-                    "mean_us": 3.0198,
-                    "trimmed_mean_us": 3.00075,
-                    "min_us": 2,
-                    "max_us": 10,
-                    "std_us": 0.3333018756031245
-                },
-                "layer2_ads_root_expand": {
-                    "mean_us": 0.19540000000000002,
-                    "trimmed_mean_us": 0.2,
-                    "min_us": 0,
-                    "max_us": 0,
-                    "std_us": 0.022800871902605862
-                },
-                "total": {
-                    "mean_us": 3.324,
-                    "trimmed_mean_us": 3.30275,
-                    "min_us": 3,
-                    "max_us": 10,
-                    "std_us": 0.33329592308441064
-                },
-                "layer2_overhead_percent": 6.055559760805389
-            },
-            "measured_base_times": {
-                "single_hash": {
-                    "mean_us": 0.15419999999999998,
-                    "trimmed_mean_us": 0.15525,
-                    "min_us": 0,
-                    "max_us": 0,
-                    "std_us": 0.04987318587516412
-                },
-                "header_hash_scattered": {
-                    "mean_us": 0.3048,
-                    "trimmed_mean_us": 0.3,
-                    "min_us": 0,
-                    "max_us": 0,
-                    "std_us": 0.023195604586737768
-                },
-                "header_hash_unified": {
-                    "mean_us": 0.1722,
-                    "trimmed_mean_us": 0.17725,
-                    "min_us": 0,
-                    "max_us": 0,
-                    "std_us": 0.0457312003491132
-                },
-                "ads_root_expand": {
-                    "mean_us": 0.165,
-                    "trimmed_mean_us": 0.16875,
-                    "min_us": 0,
-                    "max_us": 0,
-                    "std_us": 0.04774472869580968
-                }
-            },
-            "mmr_verify_stats": {
-                "mean_us": 3.1364,
-                "trimmed_mean_us": 3.066,
-                "min_us": 2,
-                "max_us": 22,
-                "std_us": 1.0593769863454716
-            }
-        },
-        {
-            "chain_length": 20000,
-            "log2_n": 14.287712379549449,
-            "test_block_height": 10000,
-            "actual_mmr_proof_items": 15,
-            "schemes": [
-                {
-                    "scheme_name": "HeaderChain",
-                    "chain_verify_time_us": 3000.2999999999997,
-                    "block_verify_time_us": 0.0,
-                    "total_verify_time_us": 3000.2999999999997,
-                    "speedup_vs_header_chain": 1.0
-                },
-                {
-                    "scheme_name": "Merkle",
-                    "chain_verify_time_us": 2.4,
-                    "block_verify_time_us": 0.3,
-                    "total_verify_time_us": 2.6999999999999997,
-                    "speedup_vs_header_chain": 1111.2222222222222
-                },
-                {
-                    "scheme_name": "MMR-Scattered",
-                    "chain_verify_time_us": 3.00175,
-                    "block_verify_time_us": 0.3,
-                    "total_verify_time_us": 3.3017499999999997,
-                    "speedup_vs_header_chain": 908.6999318543196
-                },
-                {
-                    "scheme_name": "Two-Layer",
-                    "chain_verify_time_us": 3.0025,
-                    "block_verify_time_us": 0.2,
-                    "total_verify_time_us": 3.2025,
-                    "speedup_vs_header_chain": 936.8618266978922
-                }
-            ],
-            "two_layer_breakdown": {
-                "layer1_mmr_verify": {
-                    "mean_us": 3.0366,
-                    "trimmed_mean_us": 3.0025,
-                    "min_us": 2,
-                    "max_us": 17,
-                    "std_us": 0.6404848801990005
-                },
-                "layer2_ads_root_expand": {
-                    "mean_us": 0.1996,
-                    "trimmed_mean_us": 0.2,
-                    "min_us": 0,
-                    "max_us": 0,
-                    "std_us": 0.021927188675396028
-                },
-                "total": {
-                    "mean_us": 3.3482,
-                    "trimmed_mean_us": 3.31275,
-                    "min_us": 3,
-                    "max_us": 17,
-                    "std_us": 0.640090768863896
-                },
-                "layer2_overhead_percent": 6.037280205267527
-            },
-            "measured_base_times": {
-                "single_hash": {
-                    "mean_us": 0.15919999999999998,
-                    "trimmed_mean_us": 0.16,
-                    "min_us": 0,
-                    "max_us": 0,
-                    "std_us": 0.05386243890364857
-                },
-                "header_hash_scattered": {
-                    "mean_us": 0.297,
-                    "trimmed_mean_us": 0.3,
-                    "min_us": 0,
-                    "max_us": 0,
-                    "std_us": 0.021258029250502748
-                },
-                "header_hash_unified": {
-                    "mean_us": 0.1688,
-                    "trimmed_mean_us": 0.173,
-                    "min_us": 0,
-                    "max_us": 0,
-                    "std_us": 0.04765608255415868
-                },
-                "ads_root_expand": {
-                    "mean_us": 0.1694,
-                    "trimmed_mean_us": 0.17425,
-                    "min_us": 0,
-                    "max_us": 0,
-                    "std_us": 0.046129120862890484
-                }
-            },
-            "mmr_verify_stats": {
-                "mean_us": 3.0944000000000003,
-                "trimmed_mean_us": 3.00175,
-                "min_us": 2,
-                "max_us": 28,
-                "std_us": 1.3620863402871342
-            }
-        }
+  "metadata": {
+    "experiment_name": "experiment2_verify_time_comprehensive",
+    "description": "验证时间对比实验 - 23链长x6查询类型x4方案（含存储开销分析）",
+    "timestamp": 1775140760,
+    "db_path": "output/db_eth",
+    "key_path": "output/pk_eth.key",
+    "query_path": "output/query_eth2.json",
+    "chain_block_count": 20000,
+    "chain_lengths": [
+      100,
+      200,
+      300,
+      400,
+      500,
+      750,
+      1000,
+      1500,
+      2000,
+      2500,
+      3000,
+      4000,
+      5000,
+      6000,
+      7000,
+      8000,
+      9000,
+      10000,
+      12000,
+      14000,
+      16000,
+      18000,
+      20000
     ],
-    "summary": {
-        "avg_speedup_ratios": [
-            ["HeaderChain", 1.0],
-            ["Merkle", 368.00630959148805],
-            ["MMR-Scattered", 295.3150125277102],
-            ["Two-Layer", 311.55143660131324]
-        ],
-        "max_chain_verify_times": [
-            ["HeaderChain", 3000.2999999999997],
-            ["Merkle", 2.6999999999999997],
-            ["MMR-Scattered", 3.3017499999999997],
-            ["Two-Layer", 3.2025]
-        ],
-        "two_layer_overhead_analysis": {
-            "avg_layer2_overhead_us": 0.3500978260869566,
-            "avg_layer2_overhead_percent": 7.26953186326373,
-            "overhead_vs_mmr_scattered_percent": -4.22541267036366
-        },
-        "total_data_points": 23
+    "base_iterations": 500,
+    "mmr_verify_iterations": 500,
+    "block_verify_iterations": 20,
+    "block_verify_warmup": 3,
+    "trim_percent": 10.0,
+    "schemes": [
+      {
+        "name": "HC-S",
+        "chain_proof_type": "HeaderChain",
+        "block_commitment_type": "Scattered",
+        "description": "头链同步+分散承诺",
+        "block_header_size": 164
+      },
+      {
+        "name": "MT-S",
+        "chain_proof_type": "Merkle",
+        "block_commitment_type": "Scattered",
+        "description": "Merkle树+分散承诺",
+        "block_header_size": 164
+      },
+      {
+        "name": "MMR-S",
+        "chain_proof_type": "MMR",
+        "block_commitment_type": "Scattered",
+        "description": "MMR+分散承诺",
+        "block_header_size": 164
+      },
+      {
+        "name": "MMR-U",
+        "chain_proof_type": "MMR",
+        "block_commitment_type": "Unified",
+        "description": "MMR+统一承诺BlockADSRoot（本文方案）",
+        "block_header_size": 100
+      }
+    ],
+    "block_header_sizes": {
+      "ads_components": 96,
+      "scattered": 164,
+      "unified": 100
     }
+  },
+  "base_times": {
+    "single_hash": {
+      "mean_us": 0.8166,
+      "trimmed_mean_us": 0.80025,
+      "min_us": 0,
+      "max_us": 4,
+      "std_us": 0.15935881042767094,
+      "sample_count": 500
+    },
+    "header_hash_scattered": {
+      "mean_us": 9.368,
+      "trimmed_mean_us": 1.5,
+      "min_us": 1,
+      "max_us": 3870,
+      "std_us": 173.04860859849683,
+      "sample_count": 500
+    },
+    "header_hash_unified": {
+      "mean_us": 0.838,
+      "trimmed_mean_us": 0.83425,
+      "min_us": 0,
+      "max_us": 1,
+      "std_us": 0.04980925540346588,
+      "sample_count": 500
+    },
+    "ads_root_expand": {
+      "mean_us": 14.801,
+      "trimmed_mean_us": 0.8805,
+      "min_us": 0,
+      "max_us": 2705,
+      "std_us": 154.17991162696455,
+      "sample_count": 500
+    }
+  },
+  "mmr_calibration": {
+    "measurements": [
+      {
+        "target_height": 100,
+        "proof_items": 15,
+        "verify_time": {
+          "mean_us": 16.232,
+          "trimmed_mean_us": 13.861,
+          "min_us": 6,
+          "max_us": 901,
+          "std_us": 42.82472989969656,
+          "sample_count": 500
+        },
+        "per_item_us": 0.9240666666666667
+      },
+      {
+        "target_height": 500,
+        "proof_items": 15,
+        "verify_time": {
+          "mean_us": 22.216,
+          "trimmed_mean_us": 13.958,
+          "min_us": 13,
+          "max_us": 2391,
+          "std_us": 120.96624557759192,
+          "sample_count": 500
+        },
+        "per_item_us": 0.9305333333333333
+      },
+      {
+        "target_height": 1000,
+        "proof_items": 15,
+        "verify_time": {
+          "mean_us": 17.215400000000002,
+          "trimmed_mean_us": 13.38175,
+          "min_us": 5,
+          "max_us": 815,
+          "std_us": 45.862880747953604,
+          "sample_count": 500
+        },
+        "per_item_us": 0.8921166666666667
+      },
+      {
+        "target_height": 5000,
+        "proof_items": 15,
+        "verify_time": {
+          "mean_us": 27.7528,
+          "trimmed_mean_us": 14.25775,
+          "min_us": 13,
+          "max_us": 2433,
+          "std_us": 139.61399007480986,
+          "sample_count": 500
+        },
+        "per_item_us": 0.9505166666666667
+      },
+      {
+        "target_height": 10000,
+        "proof_items": 15,
+        "verify_time": {
+          "mean_us": 23.302400000000002,
+          "trimmed_mean_us": 14.1065,
+          "min_us": 13,
+          "max_us": 2402,
+          "std_us": 117.21010148455593,
+          "sample_count": 500
+        },
+        "per_item_us": 0.9404333333333333
+      },
+      {
+        "target_height": 15000,
+        "proof_items": 15,
+        "verify_time": {
+          "mean_us": 42.5884,
+          "trimmed_mean_us": 14.39575,
+          "min_us": 6,
+          "max_us": 1753,
+          "std_us": 147.71417270891172,
+          "sample_count": 500
+        },
+        "per_item_us": 0.9597166666666667
+      },
+      {
+        "target_height": 19000,
+        "proof_items": 13,
+        "verify_time": {
+          "mean_us": 18.7046,
+          "trimmed_mean_us": 12.5015,
+          "min_us": 12,
+          "max_us": 886,
+          "std_us": 58.69589709265024,
+          "sample_count": 500
+        },
+        "per_item_us": 0.9616538461538462
+      }
+    ],
+    "avg_per_item_us": 0.9370053113553115
+  },
+  "chain_level_results": [
+    {
+      "chain_length": 100,
+      "log2_n": 7.0,
+      "target_height": 50,
+      "mmr_proof_items_theoretical": 7,
+      "schemes": [
+        {
+          "scheme_name": "HC-S",
+          "chain_verify_time_us": 76.5,
+          "formula": "(100-50+1) * T_header_hash(164B)",
+          "hash_operations": 51,
+          "header_count": 51
+        },
+        {
+          "scheme_name": "MT-S",
+          "chain_verify_time_us": 7.10175,
+          "formula": "ceil(log2(100)) * T_hash + T_header_hash(164B)",
+          "hash_operations": 8,
+          "header_count": 1
+        },
+        {
+          "scheme_name": "MMR-S",
+          "chain_verify_time_us": 8.05903717948718,
+          "formula": "ceil(log2(100)) * T_mmr_step + T_header_hash(164B)",
+          "hash_operations": 8,
+          "header_count": 1
+        },
+        {
+          "scheme_name": "MMR-U",
+          "chain_verify_time_us": 7.43953717948718,
+          "formula": "ceil(log2(100)) * T_mmr_step + T_ads_expand",
+          "hash_operations": 8,
+          "header_count": 0
+        }
+      ]
+    },
+    {
+      "chain_length": 200,
+      "log2_n": 8.0,
+      "target_height": 100,
+      "mmr_proof_items_theoretical": 8,
+      "schemes": [
+        {
+          "scheme_name": "HC-S",
+          "chain_verify_time_us": 151.5,
+          "formula": "(200-100+1) * T_header_hash(164B)",
+          "hash_operations": 101,
+          "header_count": 101
+        },
+        {
+          "scheme_name": "MT-S",
+          "chain_verify_time_us": 7.902,
+          "formula": "ceil(log2(200)) * T_hash + T_header_hash(164B)",
+          "hash_operations": 9,
+          "header_count": 1
+        },
+        {
+          "scheme_name": "MMR-S",
+          "chain_verify_time_us": 8.996042490842491,
+          "formula": "ceil(log2(200)) * T_mmr_step + T_header_hash(164B)",
+          "hash_operations": 9,
+          "header_count": 1
+        },
+        {
+          "scheme_name": "MMR-U",
+          "chain_verify_time_us": 8.376542490842493,
+          "formula": "ceil(log2(200)) * T_mmr_step + T_ads_expand",
+          "hash_operations": 9,
+          "header_count": 0
+        }
+      ]
+    },
+    {
+      "chain_length": 300,
+      "log2_n": 9.0,
+      "target_height": 150,
+      "mmr_proof_items_theoretical": 9,
+      "schemes": [
+        {
+          "scheme_name": "HC-S",
+          "chain_verify_time_us": 226.5,
+          "formula": "(300-150+1) * T_header_hash(164B)",
+          "hash_operations": 151,
+          "header_count": 151
+        },
+        {
+          "scheme_name": "MT-S",
+          "chain_verify_time_us": 8.70225,
+          "formula": "ceil(log2(300)) * T_hash + T_header_hash(164B)",
+          "hash_operations": 10,
+          "header_count": 1
+        },
+        {
+          "scheme_name": "MMR-S",
+          "chain_verify_time_us": 9.933047802197803,
+          "formula": "ceil(log2(300)) * T_mmr_step + T_header_hash(164B)",
+          "hash_operations": 10,
+          "header_count": 1
+        },
+        {
+          "scheme_name": "MMR-U",
+          "chain_verify_time_us": 9.313547802197803,
+          "formula": "ceil(log2(300)) * T_mmr_step + T_ads_expand",
+          "hash_operations": 10,
+          "header_count": 0
+        }
+      ]
+    },
+    {
+      "chain_length": 400,
+      "log2_n": 9.0,
+      "target_height": 200,
+      "mmr_proof_items_theoretical": 9,
+      "schemes": [
+        {
+          "scheme_name": "HC-S",
+          "chain_verify_time_us": 301.5,
+          "formula": "(400-200+1) * T_header_hash(164B)",
+          "hash_operations": 201,
+          "header_count": 201
+        },
+        {
+          "scheme_name": "MT-S",
+          "chain_verify_time_us": 8.70225,
+          "formula": "ceil(log2(400)) * T_hash + T_header_hash(164B)",
+          "hash_operations": 10,
+          "header_count": 1
+        },
+        {
+          "scheme_name": "MMR-S",
+          "chain_verify_time_us": 9.933047802197803,
+          "formula": "ceil(log2(400)) * T_mmr_step + T_header_hash(164B)",
+          "hash_operations": 10,
+          "header_count": 1
+        },
+        {
+          "scheme_name": "MMR-U",
+          "chain_verify_time_us": 9.313547802197803,
+          "formula": "ceil(log2(400)) * T_mmr_step + T_ads_expand",
+          "hash_operations": 10,
+          "header_count": 0
+        }
+      ]
+    },
+    {
+      "chain_length": 500,
+      "log2_n": 9.0,
+      "target_height": 250,
+      "mmr_proof_items_theoretical": 9,
+      "schemes": [
+        {
+          "scheme_name": "HC-S",
+          "chain_verify_time_us": 376.5,
+          "formula": "(500-250+1) * T_header_hash(164B)",
+          "hash_operations": 251,
+          "header_count": 251
+        },
+        {
+          "scheme_name": "MT-S",
+          "chain_verify_time_us": 8.70225,
+          "formula": "ceil(log2(500)) * T_hash + T_header_hash(164B)",
+          "hash_operations": 10,
+          "header_count": 1
+        },
+        {
+          "scheme_name": "MMR-S",
+          "chain_verify_time_us": 9.933047802197803,
+          "formula": "ceil(log2(500)) * T_mmr_step + T_header_hash(164B)",
+          "hash_operations": 10,
+          "header_count": 1
+        },
+        {
+          "scheme_name": "MMR-U",
+          "chain_verify_time_us": 9.313547802197803,
+          "formula": "ceil(log2(500)) * T_mmr_step + T_ads_expand",
+          "hash_operations": 10,
+          "header_count": 0
+        }
+      ]
+    },
+    {
+      "chain_length": 750,
+      "log2_n": 10.0,
+      "target_height": 375,
+      "mmr_proof_items_theoretical": 10,
+      "schemes": [
+        {
+          "scheme_name": "HC-S",
+          "chain_verify_time_us": 564.0,
+          "formula": "(750-375+1) * T_header_hash(164B)",
+          "hash_operations": 376,
+          "header_count": 376
+        },
+        {
+          "scheme_name": "MT-S",
+          "chain_verify_time_us": 9.5025,
+          "formula": "ceil(log2(750)) * T_hash + T_header_hash(164B)",
+          "hash_operations": 11,
+          "header_count": 1
+        },
+        {
+          "scheme_name": "MMR-S",
+          "chain_verify_time_us": 10.870053113553116,
+          "formula": "ceil(log2(750)) * T_mmr_step + T_header_hash(164B)",
+          "hash_operations": 11,
+          "header_count": 1
+        },
+        {
+          "scheme_name": "MMR-U",
+          "chain_verify_time_us": 10.250553113553115,
+          "formula": "ceil(log2(750)) * T_mmr_step + T_ads_expand",
+          "hash_operations": 11,
+          "header_count": 0
+        }
+      ]
+    },
+    {
+      "chain_length": 1000,
+      "log2_n": 10.0,
+      "target_height": 500,
+      "mmr_proof_items_theoretical": 10,
+      "schemes": [
+        {
+          "scheme_name": "HC-S",
+          "chain_verify_time_us": 751.5,
+          "formula": "(1000-500+1) * T_header_hash(164B)",
+          "hash_operations": 501,
+          "header_count": 501
+        },
+        {
+          "scheme_name": "MT-S",
+          "chain_verify_time_us": 9.5025,
+          "formula": "ceil(log2(1000)) * T_hash + T_header_hash(164B)",
+          "hash_operations": 11,
+          "header_count": 1
+        },
+        {
+          "scheme_name": "MMR-S",
+          "chain_verify_time_us": 10.870053113553116,
+          "formula": "ceil(log2(1000)) * T_mmr_step + T_header_hash(164B)",
+          "hash_operations": 11,
+          "header_count": 1
+        },
+        {
+          "scheme_name": "MMR-U",
+          "chain_verify_time_us": 10.250553113553115,
+          "formula": "ceil(log2(1000)) * T_mmr_step + T_ads_expand",
+          "hash_operations": 11,
+          "header_count": 0
+        }
+      ]
+    },
+    {
+      "chain_length": 1500,
+      "log2_n": 11.0,
+      "target_height": 750,
+      "mmr_proof_items_theoretical": 11,
+      "schemes": [
+        {
+          "scheme_name": "HC-S",
+          "chain_verify_time_us": 1126.5,
+          "formula": "(1500-750+1) * T_header_hash(164B)",
+          "hash_operations": 751,
+          "header_count": 751
+        },
+        {
+          "scheme_name": "MT-S",
+          "chain_verify_time_us": 10.30275,
+          "formula": "ceil(log2(1500)) * T_hash + T_header_hash(164B)",
+          "hash_operations": 12,
+          "header_count": 1
+        },
+        {
+          "scheme_name": "MMR-S",
+          "chain_verify_time_us": 11.807058424908426,
+          "formula": "ceil(log2(1500)) * T_mmr_step + T_header_hash(164B)",
+          "hash_operations": 12,
+          "header_count": 1
+        },
+        {
+          "scheme_name": "MMR-U",
+          "chain_verify_time_us": 11.187558424908426,
+          "formula": "ceil(log2(1500)) * T_mmr_step + T_ads_expand",
+          "hash_operations": 12,
+          "header_count": 0
+        }
+      ]
+    },
+    {
+      "chain_length": 2000,
+      "log2_n": 11.0,
+      "target_height": 1000,
+      "mmr_proof_items_theoretical": 11,
+      "schemes": [
+        {
+          "scheme_name": "HC-S",
+          "chain_verify_time_us": 1501.5,
+          "formula": "(2000-1000+1) * T_header_hash(164B)",
+          "hash_operations": 1001,
+          "header_count": 1001
+        },
+        {
+          "scheme_name": "MT-S",
+          "chain_verify_time_us": 10.30275,
+          "formula": "ceil(log2(2000)) * T_hash + T_header_hash(164B)",
+          "hash_operations": 12,
+          "header_count": 1
+        },
+        {
+          "scheme_name": "MMR-S",
+          "chain_verify_time_us": 11.807058424908426,
+          "formula": "ceil(log2(2000)) * T_mmr_step + T_header_hash(164B)",
+          "hash_operations": 12,
+          "header_count": 1
+        },
+        {
+          "scheme_name": "MMR-U",
+          "chain_verify_time_us": 11.187558424908426,
+          "formula": "ceil(log2(2000)) * T_mmr_step + T_ads_expand",
+          "hash_operations": 12,
+          "header_count": 0
+        }
+      ]
+    },
+    {
+      "chain_length": 2500,
+      "log2_n": 12.0,
+      "target_height": 1250,
+      "mmr_proof_items_theoretical": 12,
+      "schemes": [
+        {
+          "scheme_name": "HC-S",
+          "chain_verify_time_us": 1876.5,
+          "formula": "(2500-1250+1) * T_header_hash(164B)",
+          "hash_operations": 1251,
+          "header_count": 1251
+        },
+        {
+          "scheme_name": "MT-S",
+          "chain_verify_time_us": 11.103,
+          "formula": "ceil(log2(2500)) * T_hash + T_header_hash(164B)",
+          "hash_operations": 13,
+          "header_count": 1
+        },
+        {
+          "scheme_name": "MMR-S",
+          "chain_verify_time_us": 12.744063736263739,
+          "formula": "ceil(log2(2500)) * T_mmr_step + T_header_hash(164B)",
+          "hash_operations": 13,
+          "header_count": 1
+        },
+        {
+          "scheme_name": "MMR-U",
+          "chain_verify_time_us": 12.124563736263738,
+          "formula": "ceil(log2(2500)) * T_mmr_step + T_ads_expand",
+          "hash_operations": 13,
+          "header_count": 0
+        }
+      ]
+    },
+    {
+      "chain_length": 3000,
+      "log2_n": 12.0,
+      "target_height": 1500,
+      "mmr_proof_items_theoretical": 12,
+      "schemes": [
+        {
+          "scheme_name": "HC-S",
+          "chain_verify_time_us": 2251.5,
+          "formula": "(3000-1500+1) * T_header_hash(164B)",
+          "hash_operations": 1501,
+          "header_count": 1501
+        },
+        {
+          "scheme_name": "MT-S",
+          "chain_verify_time_us": 11.103,
+          "formula": "ceil(log2(3000)) * T_hash + T_header_hash(164B)",
+          "hash_operations": 13,
+          "header_count": 1
+        },
+        {
+          "scheme_name": "MMR-S",
+          "chain_verify_time_us": 12.744063736263739,
+          "formula": "ceil(log2(3000)) * T_mmr_step + T_header_hash(164B)",
+          "hash_operations": 13,
+          "header_count": 1
+        },
+        {
+          "scheme_name": "MMR-U",
+          "chain_verify_time_us": 12.124563736263738,
+          "formula": "ceil(log2(3000)) * T_mmr_step + T_ads_expand",
+          "hash_operations": 13,
+          "header_count": 0
+        }
+      ]
+    },
+    {
+      "chain_length": 4000,
+      "log2_n": 12.0,
+      "target_height": 2000,
+      "mmr_proof_items_theoretical": 12,
+      "schemes": [
+        {
+          "scheme_name": "HC-S",
+          "chain_verify_time_us": 3001.5,
+          "formula": "(4000-2000+1) * T_header_hash(164B)",
+          "hash_operations": 2001,
+          "header_count": 2001
+        },
+        {
+          "scheme_name": "MT-S",
+          "chain_verify_time_us": 11.103,
+          "formula": "ceil(log2(4000)) * T_hash + T_header_hash(164B)",
+          "hash_operations": 13,
+          "header_count": 1
+        },
+        {
+          "scheme_name": "MMR-S",
+          "chain_verify_time_us": 12.744063736263739,
+          "formula": "ceil(log2(4000)) * T_mmr_step + T_header_hash(164B)",
+          "hash_operations": 13,
+          "header_count": 1
+        },
+        {
+          "scheme_name": "MMR-U",
+          "chain_verify_time_us": 12.124563736263738,
+          "formula": "ceil(log2(4000)) * T_mmr_step + T_ads_expand",
+          "hash_operations": 13,
+          "header_count": 0
+        }
+      ]
+    },
+    {
+      "chain_length": 5000,
+      "log2_n": 13.0,
+      "target_height": 2500,
+      "mmr_proof_items_theoretical": 13,
+      "schemes": [
+        {
+          "scheme_name": "HC-S",
+          "chain_verify_time_us": 3751.5,
+          "formula": "(5000-2500+1) * T_header_hash(164B)",
+          "hash_operations": 2501,
+          "header_count": 2501
+        },
+        {
+          "scheme_name": "MT-S",
+          "chain_verify_time_us": 11.90325,
+          "formula": "ceil(log2(5000)) * T_hash + T_header_hash(164B)",
+          "hash_operations": 14,
+          "header_count": 1
+        },
+        {
+          "scheme_name": "MMR-S",
+          "chain_verify_time_us": 13.681069047619049,
+          "formula": "ceil(log2(5000)) * T_mmr_step + T_header_hash(164B)",
+          "hash_operations": 14,
+          "header_count": 1
+        },
+        {
+          "scheme_name": "MMR-U",
+          "chain_verify_time_us": 13.061569047619049,
+          "formula": "ceil(log2(5000)) * T_mmr_step + T_ads_expand",
+          "hash_operations": 14,
+          "header_count": 0
+        }
+      ]
+    },
+    {
+      "chain_length": 6000,
+      "log2_n": 13.0,
+      "target_height": 3000,
+      "mmr_proof_items_theoretical": 13,
+      "schemes": [
+        {
+          "scheme_name": "HC-S",
+          "chain_verify_time_us": 4501.5,
+          "formula": "(6000-3000+1) * T_header_hash(164B)",
+          "hash_operations": 3001,
+          "header_count": 3001
+        },
+        {
+          "scheme_name": "MT-S",
+          "chain_verify_time_us": 11.90325,
+          "formula": "ceil(log2(6000)) * T_hash + T_header_hash(164B)",
+          "hash_operations": 14,
+          "header_count": 1
+        },
+        {
+          "scheme_name": "MMR-S",
+          "chain_verify_time_us": 13.681069047619049,
+          "formula": "ceil(log2(6000)) * T_mmr_step + T_header_hash(164B)",
+          "hash_operations": 14,
+          "header_count": 1
+        },
+        {
+          "scheme_name": "MMR-U",
+          "chain_verify_time_us": 13.061569047619049,
+          "formula": "ceil(log2(6000)) * T_mmr_step + T_ads_expand",
+          "hash_operations": 14,
+          "header_count": 0
+        }
+      ]
+    },
+    {
+      "chain_length": 7000,
+      "log2_n": 13.0,
+      "target_height": 3500,
+      "mmr_proof_items_theoretical": 13,
+      "schemes": [
+        {
+          "scheme_name": "HC-S",
+          "chain_verify_time_us": 5251.5,
+          "formula": "(7000-3500+1) * T_header_hash(164B)",
+          "hash_operations": 3501,
+          "header_count": 3501
+        },
+        {
+          "scheme_name": "MT-S",
+          "chain_verify_time_us": 11.90325,
+          "formula": "ceil(log2(7000)) * T_hash + T_header_hash(164B)",
+          "hash_operations": 14,
+          "header_count": 1
+        },
+        {
+          "scheme_name": "MMR-S",
+          "chain_verify_time_us": 13.681069047619049,
+          "formula": "ceil(log2(7000)) * T_mmr_step + T_header_hash(164B)",
+          "hash_operations": 14,
+          "header_count": 1
+        },
+        {
+          "scheme_name": "MMR-U",
+          "chain_verify_time_us": 13.061569047619049,
+          "formula": "ceil(log2(7000)) * T_mmr_step + T_ads_expand",
+          "hash_operations": 14,
+          "header_count": 0
+        }
+      ]
+    },
+    {
+      "chain_length": 8000,
+      "log2_n": 13.0,
+      "target_height": 4000,
+      "mmr_proof_items_theoretical": 13,
+      "schemes": [
+        {
+          "scheme_name": "HC-S",
+          "chain_verify_time_us": 6001.5,
+          "formula": "(8000-4000+1) * T_header_hash(164B)",
+          "hash_operations": 4001,
+          "header_count": 4001
+        },
+        {
+          "scheme_name": "MT-S",
+          "chain_verify_time_us": 11.90325,
+          "formula": "ceil(log2(8000)) * T_hash + T_header_hash(164B)",
+          "hash_operations": 14,
+          "header_count": 1
+        },
+        {
+          "scheme_name": "MMR-S",
+          "chain_verify_time_us": 13.681069047619049,
+          "formula": "ceil(log2(8000)) * T_mmr_step + T_header_hash(164B)",
+          "hash_operations": 14,
+          "header_count": 1
+        },
+        {
+          "scheme_name": "MMR-U",
+          "chain_verify_time_us": 13.061569047619049,
+          "formula": "ceil(log2(8000)) * T_mmr_step + T_ads_expand",
+          "hash_operations": 14,
+          "header_count": 0
+        }
+      ]
+    },
+    {
+      "chain_length": 9000,
+      "log2_n": 14.0,
+      "target_height": 4500,
+      "mmr_proof_items_theoretical": 14,
+      "schemes": [
+        {
+          "scheme_name": "HC-S",
+          "chain_verify_time_us": 6751.5,
+          "formula": "(9000-4500+1) * T_header_hash(164B)",
+          "hash_operations": 4501,
+          "header_count": 4501
+        },
+        {
+          "scheme_name": "MT-S",
+          "chain_verify_time_us": 12.7035,
+          "formula": "ceil(log2(9000)) * T_hash + T_header_hash(164B)",
+          "hash_operations": 15,
+          "header_count": 1
+        },
+        {
+          "scheme_name": "MMR-S",
+          "chain_verify_time_us": 14.618074358974361,
+          "formula": "ceil(log2(9000)) * T_mmr_step + T_header_hash(164B)",
+          "hash_operations": 15,
+          "header_count": 1
+        },
+        {
+          "scheme_name": "MMR-U",
+          "chain_verify_time_us": 13.998574358974361,
+          "formula": "ceil(log2(9000)) * T_mmr_step + T_ads_expand",
+          "hash_operations": 15,
+          "header_count": 0
+        }
+      ]
+    },
+    {
+      "chain_length": 10000,
+      "log2_n": 14.0,
+      "target_height": 5000,
+      "mmr_proof_items_theoretical": 14,
+      "schemes": [
+        {
+          "scheme_name": "HC-S",
+          "chain_verify_time_us": 7501.5,
+          "formula": "(10000-5000+1) * T_header_hash(164B)",
+          "hash_operations": 5001,
+          "header_count": 5001
+        },
+        {
+          "scheme_name": "MT-S",
+          "chain_verify_time_us": 12.7035,
+          "formula": "ceil(log2(10000)) * T_hash + T_header_hash(164B)",
+          "hash_operations": 15,
+          "header_count": 1
+        },
+        {
+          "scheme_name": "MMR-S",
+          "chain_verify_time_us": 14.618074358974361,
+          "formula": "ceil(log2(10000)) * T_mmr_step + T_header_hash(164B)",
+          "hash_operations": 15,
+          "header_count": 1
+        },
+        {
+          "scheme_name": "MMR-U",
+          "chain_verify_time_us": 13.998574358974361,
+          "formula": "ceil(log2(10000)) * T_mmr_step + T_ads_expand",
+          "hash_operations": 15,
+          "header_count": 0
+        }
+      ]
+    },
+    {
+      "chain_length": 12000,
+      "log2_n": 14.0,
+      "target_height": 6000,
+      "mmr_proof_items_theoretical": 14,
+      "schemes": [
+        {
+          "scheme_name": "HC-S",
+          "chain_verify_time_us": 9001.5,
+          "formula": "(12000-6000+1) * T_header_hash(164B)",
+          "hash_operations": 6001,
+          "header_count": 6001
+        },
+        {
+          "scheme_name": "MT-S",
+          "chain_verify_time_us": 12.7035,
+          "formula": "ceil(log2(12000)) * T_hash + T_header_hash(164B)",
+          "hash_operations": 15,
+          "header_count": 1
+        },
+        {
+          "scheme_name": "MMR-S",
+          "chain_verify_time_us": 14.618074358974361,
+          "formula": "ceil(log2(12000)) * T_mmr_step + T_header_hash(164B)",
+          "hash_operations": 15,
+          "header_count": 1
+        },
+        {
+          "scheme_name": "MMR-U",
+          "chain_verify_time_us": 13.998574358974361,
+          "formula": "ceil(log2(12000)) * T_mmr_step + T_ads_expand",
+          "hash_operations": 15,
+          "header_count": 0
+        }
+      ]
+    },
+    {
+      "chain_length": 14000,
+      "log2_n": 14.0,
+      "target_height": 7000,
+      "mmr_proof_items_theoretical": 14,
+      "schemes": [
+        {
+          "scheme_name": "HC-S",
+          "chain_verify_time_us": 10501.5,
+          "formula": "(14000-7000+1) * T_header_hash(164B)",
+          "hash_operations": 7001,
+          "header_count": 7001
+        },
+        {
+          "scheme_name": "MT-S",
+          "chain_verify_time_us": 12.7035,
+          "formula": "ceil(log2(14000)) * T_hash + T_header_hash(164B)",
+          "hash_operations": 15,
+          "header_count": 1
+        },
+        {
+          "scheme_name": "MMR-S",
+          "chain_verify_time_us": 14.618074358974361,
+          "formula": "ceil(log2(14000)) * T_mmr_step + T_header_hash(164B)",
+          "hash_operations": 15,
+          "header_count": 1
+        },
+        {
+          "scheme_name": "MMR-U",
+          "chain_verify_time_us": 13.998574358974361,
+          "formula": "ceil(log2(14000)) * T_mmr_step + T_ads_expand",
+          "hash_operations": 15,
+          "header_count": 0
+        }
+      ]
+    },
+    {
+      "chain_length": 16000,
+      "log2_n": 14.0,
+      "target_height": 8000,
+      "mmr_proof_items_theoretical": 14,
+      "schemes": [
+        {
+          "scheme_name": "HC-S",
+          "chain_verify_time_us": 12001.5,
+          "formula": "(16000-8000+1) * T_header_hash(164B)",
+          "hash_operations": 8001,
+          "header_count": 8001
+        },
+        {
+          "scheme_name": "MT-S",
+          "chain_verify_time_us": 12.7035,
+          "formula": "ceil(log2(16000)) * T_hash + T_header_hash(164B)",
+          "hash_operations": 15,
+          "header_count": 1
+        },
+        {
+          "scheme_name": "MMR-S",
+          "chain_verify_time_us": 14.618074358974361,
+          "formula": "ceil(log2(16000)) * T_mmr_step + T_header_hash(164B)",
+          "hash_operations": 15,
+          "header_count": 1
+        },
+        {
+          "scheme_name": "MMR-U",
+          "chain_verify_time_us": 13.998574358974361,
+          "formula": "ceil(log2(16000)) * T_mmr_step + T_ads_expand",
+          "hash_operations": 15,
+          "header_count": 0
+        }
+      ]
+    },
+    {
+      "chain_length": 18000,
+      "log2_n": 15.0,
+      "target_height": 9000,
+      "mmr_proof_items_theoretical": 15,
+      "schemes": [
+        {
+          "scheme_name": "HC-S",
+          "chain_verify_time_us": 13501.5,
+          "formula": "(18000-9000+1) * T_header_hash(164B)",
+          "hash_operations": 9001,
+          "header_count": 9001
+        },
+        {
+          "scheme_name": "MT-S",
+          "chain_verify_time_us": 13.50375,
+          "formula": "ceil(log2(18000)) * T_hash + T_header_hash(164B)",
+          "hash_operations": 16,
+          "header_count": 1
+        },
+        {
+          "scheme_name": "MMR-S",
+          "chain_verify_time_us": 15.555079670329672,
+          "formula": "ceil(log2(18000)) * T_mmr_step + T_header_hash(164B)",
+          "hash_operations": 16,
+          "header_count": 1
+        },
+        {
+          "scheme_name": "MMR-U",
+          "chain_verify_time_us": 14.935579670329671,
+          "formula": "ceil(log2(18000)) * T_mmr_step + T_ads_expand",
+          "hash_operations": 16,
+          "header_count": 0
+        }
+      ]
+    },
+    {
+      "chain_length": 20000,
+      "log2_n": 15.0,
+      "target_height": 10000,
+      "mmr_proof_items_theoretical": 15,
+      "schemes": [
+        {
+          "scheme_name": "HC-S",
+          "chain_verify_time_us": 15001.5,
+          "formula": "(20000-10000+1) * T_header_hash(164B)",
+          "hash_operations": 10001,
+          "header_count": 10001
+        },
+        {
+          "scheme_name": "MT-S",
+          "chain_verify_time_us": 13.50375,
+          "formula": "ceil(log2(20000)) * T_hash + T_header_hash(164B)",
+          "hash_operations": 16,
+          "header_count": 1
+        },
+        {
+          "scheme_name": "MMR-S",
+          "chain_verify_time_us": 15.555079670329672,
+          "formula": "ceil(log2(20000)) * T_mmr_step + T_header_hash(164B)",
+          "hash_operations": 16,
+          "header_count": 1
+        },
+        {
+          "scheme_name": "MMR-U",
+          "chain_verify_time_us": 14.935579670329671,
+          "formula": "ceil(log2(20000)) * T_mmr_step + T_ads_expand",
+          "hash_operations": 16,
+          "header_count": 0
+        }
+      ]
+    }
+  ],
+  "block_level_results": [
+    {
+      "query_index": 0,
+      "query_type": "SingleKeyword",
+      "query_description": "关键词+范围",
+      "block_range": [
+        1,
+        5000
+      ],
+      "range_condition": "[Range(21000, 500000)]",
+      "has_keyword": true,
+      "query_exec_time_us": 44940439,
+      "result_count": 7402,
+      "block_verify_time": {
+        "mean_us": 2369062.29,
+        "trimmed_mean_us": 2361839.84375,
+        "min_us": 2221398,
+        "max_us": 2591808,
+        "std_us": 94204.36697038217,
+        "sample_count": 20
+      }
+    },
+    {
+      "query_index": 1,
+      "query_type": "BooleanOR",
+      "query_description": "布尔OR+范围",
+      "block_range": [
+        1,
+        5000
+      ],
+      "range_condition": "[Range(50000, 2000000)]",
+      "has_keyword": true,
+      "query_exec_time_us": 269514564,
+      "result_count": 8116,
+      "block_verify_time": {
+        "mean_us": 4537940.215000001,
+        "trimmed_mean_us": 4582124.2875,
+        "min_us": 1793457,
+        "max_us": 7461685,
+        "std_us": 2094795.639432701,
+        "sample_count": 20
+      }
+    },
+    {
+      "query_index": 2,
+      "query_type": "BooleanAND",
+      "query_description": "布尔AND+范围",
+      "block_range": [
+        1,
+        20000
+      ],
+      "range_condition": "[Range(21000, 8000000)]",
+      "has_keyword": true,
+      "query_exec_time_us": 976084,
+      "result_count": 0,
+      "block_verify_time": {
+        "mean_us": 2671857.685,
+        "trimmed_mean_us": 2666615.59375,
+        "min_us": 2570686,
+        "max_us": 2807659,
+        "std_us": 67973.31693129586,
+        "sample_count": 20
+      }
+    },
+    {
+      "query_index": 3,
+      "query_type": "BooleanNOT",
+      "query_description": "布尔NOT+范围",
+      "block_range": [
+        1,
+        1000
+      ],
+      "range_condition": "[Range(200000, 1000000)]",
+      "has_keyword": true,
+      "query_exec_time_us": 116680715,
+      "result_count": 2593,
+      "block_verify_time": {
+        "mean_us": 939682.8800000001,
+        "trimmed_mean_us": 938074.06875,
+        "min_us": 885913,
+        "max_us": 1017049,
+        "std_us": 35792.11764568754,
+        "sample_count": 20
+      }
+    },
+    {
+      "query_index": 4,
+      "query_type": "NestedBoolean",
+      "query_description": "嵌套布尔(OR∧AND)+范围",
+      "block_range": [
+        1,
+        5000
+      ],
+      "range_condition": "[Range(21000, 5000000)]",
+      "has_keyword": true,
+      "query_exec_time_us": 32011635,
+      "result_count": 0,
+      "block_verify_time": {
+        "mean_us": 1988730.0050000004,
+        "trimmed_mean_us": 1989994.3750000002,
+        "min_us": 1894003,
+        "max_us": 2099457,
+        "std_us": 46296.94731039567,
+        "sample_count": 20
+      }
+    },
+    {
+      "query_index": 5,
+      "query_type": "RangeOnly",
+      "query_description": "纯范围查询",
+      "block_range": [
+        1,
+        10000
+      ],
+      "range_condition": "[Range(21000, 4000000)]",
+      "has_keyword": false,
+      "query_exec_time_us": 6436093,
+      "result_count": 159669,
+      "block_verify_time": {
+        "mean_us": 348969.46499999997,
+        "trimmed_mean_us": 345742.58125,
+        "min_us": 297405,
+        "max_us": 441157,
+        "std_us": 40298.006960881285,
+        "sample_count": 20
+      }
+    }
+  ],
+  "combined_results": [
+    {
+      "query_type": "SingleKeyword",
+      "query_description": "关键词+范围",
+      "block_verify_time_us": 2361839.84375,
+      "schemes": [
+        {
+          "scheme_name": "HC-S",
+          "chain_verify_time_us": 15001.5,
+          "block_verify_time_us": 2361839.84375,
+          "total_verify_time_us": 2376841.34375,
+          "speedup_vs_hc": 1.0,
+          "chain_percent": 0.6311527708589826,
+          "block_percent": 99.36884722914102
+        },
+        {
+          "scheme_name": "MT-S",
+          "chain_verify_time_us": 13.50375,
+          "block_verify_time_us": 2361839.84375,
+          "total_verify_time_us": 2361853.3475,
+          "speedup_vs_hc": 1.0063458623567227,
+          "chain_percent": 0.0005717437966372296,
+          "block_percent": 99.99942825620336
+        },
+        {
+          "scheme_name": "MMR-S",
+          "chain_verify_time_us": 15.555079670329672,
+          "block_verify_time_us": 2361839.84375,
+          "total_verify_time_us": 2361855.39882967,
+          "speedup_vs_hc": 1.0063449883205193,
+          "chain_percent": 0.0006585957666179485,
+          "block_percent": 99.99934140423339
+        },
+        {
+          "scheme_name": "MMR-U",
+          "chain_verify_time_us": 14.935579670329671,
+          "block_verify_time_us": 2361839.84375,
+          "total_verify_time_us": 2361854.77932967,
+          "speedup_vs_hc": 1.006345252278628,
+          "chain_percent": 0.0006323665536527446,
+          "block_percent": 99.99936763344635
+        }
+      ]
+    },
+    {
+      "query_type": "BooleanOR",
+      "query_description": "布尔OR+范围",
+      "block_verify_time_us": 4582124.2875,
+      "schemes": [
+        {
+          "scheme_name": "HC-S",
+          "chain_verify_time_us": 15001.5,
+          "block_verify_time_us": 4582124.2875,
+          "total_verify_time_us": 4597125.7875,
+          "speedup_vs_hc": 1.0,
+          "chain_percent": 0.3263234615156808,
+          "block_percent": 99.67367653848433
+        },
+        {
+          "scheme_name": "MT-S",
+          "chain_verify_time_us": 13.50375,
+          "block_verify_time_us": 4582124.2875,
+          "total_verify_time_us": 4582137.79125,
+          "speedup_vs_hc": 1.003270961488461,
+          "chain_percent": 0.00029470414499072056,
+          "block_percent": 99.999705295855
+        },
+        {
+          "scheme_name": "MMR-S",
+          "chain_verify_time_us": 15.555079670329672,
+          "block_verify_time_us": 4582124.2875,
+          "total_verify_time_us": 4582139.84257967,
+          "speedup_vs_hc": 1.0032705123447068,
+          "chain_percent": 0.0003394719542555998,
+          "block_percent": 99.99966052804574
+        },
+        {
+          "scheme_name": "MMR-U",
+          "chain_verify_time_us": 14.935579670329671,
+          "block_verify_time_us": 4582124.2875,
+          "total_verify_time_us": 4582139.22307967,
+          "speedup_vs_hc": 1.0032706479857365,
+          "chain_percent": 0.000325952114137017,
+          "block_percent": 99.99967404788586
+        }
+      ]
+    },
+    {
+      "query_type": "BooleanAND",
+      "query_description": "布尔AND+范围",
+      "block_verify_time_us": 2666615.59375,
+      "schemes": [
+        {
+          "scheme_name": "HC-S",
+          "chain_verify_time_us": 15001.5,
+          "block_verify_time_us": 2666615.59375,
+          "total_verify_time_us": 2681617.09375,
+          "speedup_vs_hc": 1.0,
+          "chain_percent": 0.5594199125208348,
+          "block_percent": 99.44058008747916
+        },
+        {
+          "scheme_name": "MT-S",
+          "chain_verify_time_us": 13.50375,
+          "block_verify_time_us": 2666615.59375,
+          "total_verify_time_us": 2666629.0975,
+          "speedup_vs_hc": 1.0056205777789087,
+          "chain_percent": 0.0005063977593531828,
+          "block_percent": 99.99949360224065
+        },
+        {
+          "scheme_name": "MMR-S",
+          "chain_verify_time_us": 15.555079670329672,
+          "block_verify_time_us": 2666615.59375,
+          "total_verify_time_us": 2666631.14882967,
+          "speedup_vs_hc": 1.0056198041963573,
+          "chain_percent": 0.0005833232570299975,
+          "block_percent": 99.99941667674298
+        },
+        {
+          "scheme_name": "MMR-U",
+          "chain_verify_time_us": 14.935579670329671,
+          "block_verify_time_us": 2666615.59375,
+          "total_verify_time_us": 2666630.52932967,
+          "speedup_vs_hc": 1.005620037817574,
+          "chain_percent": 0.0005600918277225355,
+          "block_percent": 99.99943990817228
+        }
+      ]
+    },
+    {
+      "query_type": "BooleanNOT",
+      "query_description": "布尔NOT+范围",
+      "block_verify_time_us": 938074.06875,
+      "schemes": [
+        {
+          "scheme_name": "HC-S",
+          "chain_verify_time_us": 15001.5,
+          "block_verify_time_us": 938074.06875,
+          "total_verify_time_us": 953075.56875,
+          "speedup_vs_hc": 1.0,
+          "chain_percent": 1.5740095005976409,
+          "block_percent": 98.42599049940236
+        },
+        {
+          "scheme_name": "MT-S",
+          "chain_verify_time_us": 13.50375,
+          "block_verify_time_us": 938074.06875,
+          "total_verify_time_us": 938087.5725,
+          "speedup_vs_hc": 1.0159771823967958,
+          "chain_percent": 0.001439497803388713,
+          "block_percent": 99.99856050219661
+        },
+        {
+          "scheme_name": "MMR-S",
+          "chain_verify_time_us": 15.555079670329672,
+          "block_verify_time_us": 938074.06875,
+          "total_verify_time_us": 938089.6238296703,
+          "speedup_vs_hc": 1.0159749607496467,
+          "chain_percent": 0.0016581656246049705,
+          "block_percent": 99.99834183437541
+        },
+        {
+          "scheme_name": "MMR-U",
+          "chain_verify_time_us": 14.935579670329671,
+          "block_verify_time_us": 938074.06875,
+          "total_verify_time_us": 938089.0043296703,
+          "speedup_vs_hc": 1.0159756316843715,
+          "chain_percent": 0.0015921282097323141,
+          "block_percent": 99.99840787179026
+        }
+      ]
+    },
+    {
+      "query_type": "NestedBoolean",
+      "query_description": "嵌套布尔(OR∧AND)+范围",
+      "block_verify_time_us": 1989994.3750000002,
+      "schemes": [
+        {
+          "scheme_name": "HC-S",
+          "chain_verify_time_us": 15001.5,
+          "block_verify_time_us": 1989994.3750000002,
+          "total_verify_time_us": 2004995.8750000002,
+          "speedup_vs_hc": 1.0,
+          "chain_percent": 0.7482060281046712,
+          "block_percent": 99.25179397189532
+        },
+        {
+          "scheme_name": "MT-S",
+          "chain_verify_time_us": 13.50375,
+          "block_verify_time_us": 1989994.3750000002,
+          "total_verify_time_us": 1990007.8787500001,
+          "speedup_vs_hc": 1.0075316265880387,
+          "chain_percent": 0.0006785777154049371,
+          "block_percent": 99.99932142228461
+        },
+        {
+          "scheme_name": "MMR-S",
+          "chain_verify_time_us": 15.555079670329672,
+          "block_verify_time_us": 1989994.3750000002,
+          "total_verify_time_us": 1990009.9300796706,
+          "speedup_vs_hc": 1.007530588010548,
+          "chain_percent": 0.0007816583945240374,
+          "block_percent": 99.99921834160548
+        },
+        {
+          "scheme_name": "MMR-U",
+          "chain_verify_time_us": 14.935579670329671,
+          "block_verify_time_us": 1989994.3750000002,
+          "total_verify_time_us": 1990009.3105796706,
+          "speedup_vs_hc": 1.0075309016599345,
+          "chain_percent": 0.0007505281302417163,
+          "block_percent": 99.99924947186976
+        }
+      ]
+    },
+    {
+      "query_type": "RangeOnly",
+      "query_description": "纯范围查询",
+      "block_verify_time_us": 345742.58125,
+      "schemes": [
+        {
+          "scheme_name": "HC-S",
+          "chain_verify_time_us": 15001.5,
+          "block_verify_time_us": 345742.58125,
+          "total_verify_time_us": 360744.08125,
+          "speedup_vs_hc": 1.0,
+          "chain_percent": 4.158488185868191,
+          "block_percent": 95.8415118141318
+        },
+        {
+          "scheme_name": "MT-S",
+          "chain_verify_time_us": 13.50375,
+          "block_verify_time_us": 345742.58125,
+          "total_verify_time_us": 345756.08499999996,
+          "speedup_vs_hc": 1.0433484670269795,
+          "chain_percent": 0.00390557117743857,
+          "block_percent": 99.99609442882257
+        },
+        {
+          "scheme_name": "MMR-S",
+          "chain_verify_time_us": 15.555079670329672,
+          "block_verify_time_us": 345742.58125,
+          "total_verify_time_us": 345758.1363296703,
+          "speedup_vs_hc": 1.0433422770015193,
+          "chain_percent": 0.004498832575699204,
+          "block_percent": 99.99550116742431
+        },
+        {
+          "scheme_name": "MMR-U",
+          "chain_verify_time_us": 14.935579670329671,
+          "block_verify_time_us": 345742.58125,
+          "total_verify_time_us": 345757.5168296703,
+          "speedup_vs_hc": 1.0433441463767583,
+          "chain_percent": 0.00431966882666136,
+          "block_percent": 99.99568033117335
+        }
+      ]
+    }
+  ],
+  "storage_overhead": [
+    {
+      "chain_length": 100,
+      "schemes": [
+        {
+          "scheme_name": "HC-S",
+          "proof_header_count": 51,
+          "proof_hash_node_count": 0,
+          "chain_proof_bytes": 8364,
+          "block_info_bytes": 0,
+          "total_proof_bytes": 8364,
+          "structure_extra_storage_bytes": 0,
+          "storage_complexity": "O(1) extra storage; O(n) proof"
+        },
+        {
+          "scheme_name": "MT-S",
+          "proof_header_count": 1,
+          "proof_hash_node_count": 7,
+          "chain_proof_bytes": 224,
+          "block_info_bytes": 164,
+          "total_proof_bytes": 388,
+          "structure_extra_storage_bytes": 6400,
+          "storage_complexity": "O(n) extra (Merkle nodes); O(log n) proof"
+        },
+        {
+          "scheme_name": "MMR-S",
+          "proof_header_count": 1,
+          "proof_hash_node_count": 7,
+          "chain_proof_bytes": 224,
+          "block_info_bytes": 164,
+          "total_proof_bytes": 388,
+          "structure_extra_storage_bytes": 6400,
+          "storage_complexity": "O(n) extra (MMR nodes); O(log n) proof; O(log n) append"
+        },
+        {
+          "scheme_name": "MMR-U",
+          "proof_header_count": 0,
+          "proof_hash_node_count": 7,
+          "chain_proof_bytes": 224,
+          "block_info_bytes": 96,
+          "total_proof_bytes": 320,
+          "structure_extra_storage_bytes": 16000,
+          "storage_complexity": "O(n) extra (MMR+Components); O(log n) proof; O(log n) append"
+        }
+      ]
+    },
+    {
+      "chain_length": 200,
+      "schemes": [
+        {
+          "scheme_name": "HC-S",
+          "proof_header_count": 101,
+          "proof_hash_node_count": 0,
+          "chain_proof_bytes": 16564,
+          "block_info_bytes": 0,
+          "total_proof_bytes": 16564,
+          "structure_extra_storage_bytes": 0,
+          "storage_complexity": "O(1) extra storage; O(n) proof"
+        },
+        {
+          "scheme_name": "MT-S",
+          "proof_header_count": 1,
+          "proof_hash_node_count": 8,
+          "chain_proof_bytes": 256,
+          "block_info_bytes": 164,
+          "total_proof_bytes": 420,
+          "structure_extra_storage_bytes": 12800,
+          "storage_complexity": "O(n) extra (Merkle nodes); O(log n) proof"
+        },
+        {
+          "scheme_name": "MMR-S",
+          "proof_header_count": 1,
+          "proof_hash_node_count": 8,
+          "chain_proof_bytes": 256,
+          "block_info_bytes": 164,
+          "total_proof_bytes": 420,
+          "structure_extra_storage_bytes": 12800,
+          "storage_complexity": "O(n) extra (MMR nodes); O(log n) proof; O(log n) append"
+        },
+        {
+          "scheme_name": "MMR-U",
+          "proof_header_count": 0,
+          "proof_hash_node_count": 8,
+          "chain_proof_bytes": 256,
+          "block_info_bytes": 96,
+          "total_proof_bytes": 352,
+          "structure_extra_storage_bytes": 32000,
+          "storage_complexity": "O(n) extra (MMR+Components); O(log n) proof; O(log n) append"
+        }
+      ]
+    },
+    {
+      "chain_length": 300,
+      "schemes": [
+        {
+          "scheme_name": "HC-S",
+          "proof_header_count": 151,
+          "proof_hash_node_count": 0,
+          "chain_proof_bytes": 24764,
+          "block_info_bytes": 0,
+          "total_proof_bytes": 24764,
+          "structure_extra_storage_bytes": 0,
+          "storage_complexity": "O(1) extra storage; O(n) proof"
+        },
+        {
+          "scheme_name": "MT-S",
+          "proof_header_count": 1,
+          "proof_hash_node_count": 9,
+          "chain_proof_bytes": 288,
+          "block_info_bytes": 164,
+          "total_proof_bytes": 452,
+          "structure_extra_storage_bytes": 19200,
+          "storage_complexity": "O(n) extra (Merkle nodes); O(log n) proof"
+        },
+        {
+          "scheme_name": "MMR-S",
+          "proof_header_count": 1,
+          "proof_hash_node_count": 9,
+          "chain_proof_bytes": 288,
+          "block_info_bytes": 164,
+          "total_proof_bytes": 452,
+          "structure_extra_storage_bytes": 19200,
+          "storage_complexity": "O(n) extra (MMR nodes); O(log n) proof; O(log n) append"
+        },
+        {
+          "scheme_name": "MMR-U",
+          "proof_header_count": 0,
+          "proof_hash_node_count": 9,
+          "chain_proof_bytes": 288,
+          "block_info_bytes": 96,
+          "total_proof_bytes": 384,
+          "structure_extra_storage_bytes": 48000,
+          "storage_complexity": "O(n) extra (MMR+Components); O(log n) proof; O(log n) append"
+        }
+      ]
+    },
+    {
+      "chain_length": 400,
+      "schemes": [
+        {
+          "scheme_name": "HC-S",
+          "proof_header_count": 201,
+          "proof_hash_node_count": 0,
+          "chain_proof_bytes": 32964,
+          "block_info_bytes": 0,
+          "total_proof_bytes": 32964,
+          "structure_extra_storage_bytes": 0,
+          "storage_complexity": "O(1) extra storage; O(n) proof"
+        },
+        {
+          "scheme_name": "MT-S",
+          "proof_header_count": 1,
+          "proof_hash_node_count": 9,
+          "chain_proof_bytes": 288,
+          "block_info_bytes": 164,
+          "total_proof_bytes": 452,
+          "structure_extra_storage_bytes": 25600,
+          "storage_complexity": "O(n) extra (Merkle nodes); O(log n) proof"
+        },
+        {
+          "scheme_name": "MMR-S",
+          "proof_header_count": 1,
+          "proof_hash_node_count": 9,
+          "chain_proof_bytes": 288,
+          "block_info_bytes": 164,
+          "total_proof_bytes": 452,
+          "structure_extra_storage_bytes": 25600,
+          "storage_complexity": "O(n) extra (MMR nodes); O(log n) proof; O(log n) append"
+        },
+        {
+          "scheme_name": "MMR-U",
+          "proof_header_count": 0,
+          "proof_hash_node_count": 9,
+          "chain_proof_bytes": 288,
+          "block_info_bytes": 96,
+          "total_proof_bytes": 384,
+          "structure_extra_storage_bytes": 64000,
+          "storage_complexity": "O(n) extra (MMR+Components); O(log n) proof; O(log n) append"
+        }
+      ]
+    },
+    {
+      "chain_length": 500,
+      "schemes": [
+        {
+          "scheme_name": "HC-S",
+          "proof_header_count": 251,
+          "proof_hash_node_count": 0,
+          "chain_proof_bytes": 41164,
+          "block_info_bytes": 0,
+          "total_proof_bytes": 41164,
+          "structure_extra_storage_bytes": 0,
+          "storage_complexity": "O(1) extra storage; O(n) proof"
+        },
+        {
+          "scheme_name": "MT-S",
+          "proof_header_count": 1,
+          "proof_hash_node_count": 9,
+          "chain_proof_bytes": 288,
+          "block_info_bytes": 164,
+          "total_proof_bytes": 452,
+          "structure_extra_storage_bytes": 32000,
+          "storage_complexity": "O(n) extra (Merkle nodes); O(log n) proof"
+        },
+        {
+          "scheme_name": "MMR-S",
+          "proof_header_count": 1,
+          "proof_hash_node_count": 9,
+          "chain_proof_bytes": 288,
+          "block_info_bytes": 164,
+          "total_proof_bytes": 452,
+          "structure_extra_storage_bytes": 32000,
+          "storage_complexity": "O(n) extra (MMR nodes); O(log n) proof; O(log n) append"
+        },
+        {
+          "scheme_name": "MMR-U",
+          "proof_header_count": 0,
+          "proof_hash_node_count": 9,
+          "chain_proof_bytes": 288,
+          "block_info_bytes": 96,
+          "total_proof_bytes": 384,
+          "structure_extra_storage_bytes": 80000,
+          "storage_complexity": "O(n) extra (MMR+Components); O(log n) proof; O(log n) append"
+        }
+      ]
+    },
+    {
+      "chain_length": 750,
+      "schemes": [
+        {
+          "scheme_name": "HC-S",
+          "proof_header_count": 376,
+          "proof_hash_node_count": 0,
+          "chain_proof_bytes": 61664,
+          "block_info_bytes": 0,
+          "total_proof_bytes": 61664,
+          "structure_extra_storage_bytes": 0,
+          "storage_complexity": "O(1) extra storage; O(n) proof"
+        },
+        {
+          "scheme_name": "MT-S",
+          "proof_header_count": 1,
+          "proof_hash_node_count": 10,
+          "chain_proof_bytes": 320,
+          "block_info_bytes": 164,
+          "total_proof_bytes": 484,
+          "structure_extra_storage_bytes": 48000,
+          "storage_complexity": "O(n) extra (Merkle nodes); O(log n) proof"
+        },
+        {
+          "scheme_name": "MMR-S",
+          "proof_header_count": 1,
+          "proof_hash_node_count": 10,
+          "chain_proof_bytes": 320,
+          "block_info_bytes": 164,
+          "total_proof_bytes": 484,
+          "structure_extra_storage_bytes": 48000,
+          "storage_complexity": "O(n) extra (MMR nodes); O(log n) proof; O(log n) append"
+        },
+        {
+          "scheme_name": "MMR-U",
+          "proof_header_count": 0,
+          "proof_hash_node_count": 10,
+          "chain_proof_bytes": 320,
+          "block_info_bytes": 96,
+          "total_proof_bytes": 416,
+          "structure_extra_storage_bytes": 120000,
+          "storage_complexity": "O(n) extra (MMR+Components); O(log n) proof; O(log n) append"
+        }
+      ]
+    },
+    {
+      "chain_length": 1000,
+      "schemes": [
+        {
+          "scheme_name": "HC-S",
+          "proof_header_count": 501,
+          "proof_hash_node_count": 0,
+          "chain_proof_bytes": 82164,
+          "block_info_bytes": 0,
+          "total_proof_bytes": 82164,
+          "structure_extra_storage_bytes": 0,
+          "storage_complexity": "O(1) extra storage; O(n) proof"
+        },
+        {
+          "scheme_name": "MT-S",
+          "proof_header_count": 1,
+          "proof_hash_node_count": 10,
+          "chain_proof_bytes": 320,
+          "block_info_bytes": 164,
+          "total_proof_bytes": 484,
+          "structure_extra_storage_bytes": 64000,
+          "storage_complexity": "O(n) extra (Merkle nodes); O(log n) proof"
+        },
+        {
+          "scheme_name": "MMR-S",
+          "proof_header_count": 1,
+          "proof_hash_node_count": 10,
+          "chain_proof_bytes": 320,
+          "block_info_bytes": 164,
+          "total_proof_bytes": 484,
+          "structure_extra_storage_bytes": 64000,
+          "storage_complexity": "O(n) extra (MMR nodes); O(log n) proof; O(log n) append"
+        },
+        {
+          "scheme_name": "MMR-U",
+          "proof_header_count": 0,
+          "proof_hash_node_count": 10,
+          "chain_proof_bytes": 320,
+          "block_info_bytes": 96,
+          "total_proof_bytes": 416,
+          "structure_extra_storage_bytes": 160000,
+          "storage_complexity": "O(n) extra (MMR+Components); O(log n) proof; O(log n) append"
+        }
+      ]
+    },
+    {
+      "chain_length": 1500,
+      "schemes": [
+        {
+          "scheme_name": "HC-S",
+          "proof_header_count": 751,
+          "proof_hash_node_count": 0,
+          "chain_proof_bytes": 123164,
+          "block_info_bytes": 0,
+          "total_proof_bytes": 123164,
+          "structure_extra_storage_bytes": 0,
+          "storage_complexity": "O(1) extra storage; O(n) proof"
+        },
+        {
+          "scheme_name": "MT-S",
+          "proof_header_count": 1,
+          "proof_hash_node_count": 11,
+          "chain_proof_bytes": 352,
+          "block_info_bytes": 164,
+          "total_proof_bytes": 516,
+          "structure_extra_storage_bytes": 96000,
+          "storage_complexity": "O(n) extra (Merkle nodes); O(log n) proof"
+        },
+        {
+          "scheme_name": "MMR-S",
+          "proof_header_count": 1,
+          "proof_hash_node_count": 11,
+          "chain_proof_bytes": 352,
+          "block_info_bytes": 164,
+          "total_proof_bytes": 516,
+          "structure_extra_storage_bytes": 96000,
+          "storage_complexity": "O(n) extra (MMR nodes); O(log n) proof; O(log n) append"
+        },
+        {
+          "scheme_name": "MMR-U",
+          "proof_header_count": 0,
+          "proof_hash_node_count": 11,
+          "chain_proof_bytes": 352,
+          "block_info_bytes": 96,
+          "total_proof_bytes": 448,
+          "structure_extra_storage_bytes": 240000,
+          "storage_complexity": "O(n) extra (MMR+Components); O(log n) proof; O(log n) append"
+        }
+      ]
+    },
+    {
+      "chain_length": 2000,
+      "schemes": [
+        {
+          "scheme_name": "HC-S",
+          "proof_header_count": 1001,
+          "proof_hash_node_count": 0,
+          "chain_proof_bytes": 164164,
+          "block_info_bytes": 0,
+          "total_proof_bytes": 164164,
+          "structure_extra_storage_bytes": 0,
+          "storage_complexity": "O(1) extra storage; O(n) proof"
+        },
+        {
+          "scheme_name": "MT-S",
+          "proof_header_count": 1,
+          "proof_hash_node_count": 11,
+          "chain_proof_bytes": 352,
+          "block_info_bytes": 164,
+          "total_proof_bytes": 516,
+          "structure_extra_storage_bytes": 128000,
+          "storage_complexity": "O(n) extra (Merkle nodes); O(log n) proof"
+        },
+        {
+          "scheme_name": "MMR-S",
+          "proof_header_count": 1,
+          "proof_hash_node_count": 11,
+          "chain_proof_bytes": 352,
+          "block_info_bytes": 164,
+          "total_proof_bytes": 516,
+          "structure_extra_storage_bytes": 128000,
+          "storage_complexity": "O(n) extra (MMR nodes); O(log n) proof; O(log n) append"
+        },
+        {
+          "scheme_name": "MMR-U",
+          "proof_header_count": 0,
+          "proof_hash_node_count": 11,
+          "chain_proof_bytes": 352,
+          "block_info_bytes": 96,
+          "total_proof_bytes": 448,
+          "structure_extra_storage_bytes": 320000,
+          "storage_complexity": "O(n) extra (MMR+Components); O(log n) proof; O(log n) append"
+        }
+      ]
+    },
+    {
+      "chain_length": 2500,
+      "schemes": [
+        {
+          "scheme_name": "HC-S",
+          "proof_header_count": 1251,
+          "proof_hash_node_count": 0,
+          "chain_proof_bytes": 205164,
+          "block_info_bytes": 0,
+          "total_proof_bytes": 205164,
+          "structure_extra_storage_bytes": 0,
+          "storage_complexity": "O(1) extra storage; O(n) proof"
+        },
+        {
+          "scheme_name": "MT-S",
+          "proof_header_count": 1,
+          "proof_hash_node_count": 12,
+          "chain_proof_bytes": 384,
+          "block_info_bytes": 164,
+          "total_proof_bytes": 548,
+          "structure_extra_storage_bytes": 160000,
+          "storage_complexity": "O(n) extra (Merkle nodes); O(log n) proof"
+        },
+        {
+          "scheme_name": "MMR-S",
+          "proof_header_count": 1,
+          "proof_hash_node_count": 12,
+          "chain_proof_bytes": 384,
+          "block_info_bytes": 164,
+          "total_proof_bytes": 548,
+          "structure_extra_storage_bytes": 160000,
+          "storage_complexity": "O(n) extra (MMR nodes); O(log n) proof; O(log n) append"
+        },
+        {
+          "scheme_name": "MMR-U",
+          "proof_header_count": 0,
+          "proof_hash_node_count": 12,
+          "chain_proof_bytes": 384,
+          "block_info_bytes": 96,
+          "total_proof_bytes": 480,
+          "structure_extra_storage_bytes": 400000,
+          "storage_complexity": "O(n) extra (MMR+Components); O(log n) proof; O(log n) append"
+        }
+      ]
+    },
+    {
+      "chain_length": 3000,
+      "schemes": [
+        {
+          "scheme_name": "HC-S",
+          "proof_header_count": 1501,
+          "proof_hash_node_count": 0,
+          "chain_proof_bytes": 246164,
+          "block_info_bytes": 0,
+          "total_proof_bytes": 246164,
+          "structure_extra_storage_bytes": 0,
+          "storage_complexity": "O(1) extra storage; O(n) proof"
+        },
+        {
+          "scheme_name": "MT-S",
+          "proof_header_count": 1,
+          "proof_hash_node_count": 12,
+          "chain_proof_bytes": 384,
+          "block_info_bytes": 164,
+          "total_proof_bytes": 548,
+          "structure_extra_storage_bytes": 192000,
+          "storage_complexity": "O(n) extra (Merkle nodes); O(log n) proof"
+        },
+        {
+          "scheme_name": "MMR-S",
+          "proof_header_count": 1,
+          "proof_hash_node_count": 12,
+          "chain_proof_bytes": 384,
+          "block_info_bytes": 164,
+          "total_proof_bytes": 548,
+          "structure_extra_storage_bytes": 192000,
+          "storage_complexity": "O(n) extra (MMR nodes); O(log n) proof; O(log n) append"
+        },
+        {
+          "scheme_name": "MMR-U",
+          "proof_header_count": 0,
+          "proof_hash_node_count": 12,
+          "chain_proof_bytes": 384,
+          "block_info_bytes": 96,
+          "total_proof_bytes": 480,
+          "structure_extra_storage_bytes": 480000,
+          "storage_complexity": "O(n) extra (MMR+Components); O(log n) proof; O(log n) append"
+        }
+      ]
+    },
+    {
+      "chain_length": 4000,
+      "schemes": [
+        {
+          "scheme_name": "HC-S",
+          "proof_header_count": 2001,
+          "proof_hash_node_count": 0,
+          "chain_proof_bytes": 328164,
+          "block_info_bytes": 0,
+          "total_proof_bytes": 328164,
+          "structure_extra_storage_bytes": 0,
+          "storage_complexity": "O(1) extra storage; O(n) proof"
+        },
+        {
+          "scheme_name": "MT-S",
+          "proof_header_count": 1,
+          "proof_hash_node_count": 12,
+          "chain_proof_bytes": 384,
+          "block_info_bytes": 164,
+          "total_proof_bytes": 548,
+          "structure_extra_storage_bytes": 256000,
+          "storage_complexity": "O(n) extra (Merkle nodes); O(log n) proof"
+        },
+        {
+          "scheme_name": "MMR-S",
+          "proof_header_count": 1,
+          "proof_hash_node_count": 12,
+          "chain_proof_bytes": 384,
+          "block_info_bytes": 164,
+          "total_proof_bytes": 548,
+          "structure_extra_storage_bytes": 256000,
+          "storage_complexity": "O(n) extra (MMR nodes); O(log n) proof; O(log n) append"
+        },
+        {
+          "scheme_name": "MMR-U",
+          "proof_header_count": 0,
+          "proof_hash_node_count": 12,
+          "chain_proof_bytes": 384,
+          "block_info_bytes": 96,
+          "total_proof_bytes": 480,
+          "structure_extra_storage_bytes": 640000,
+          "storage_complexity": "O(n) extra (MMR+Components); O(log n) proof; O(log n) append"
+        }
+      ]
+    },
+    {
+      "chain_length": 5000,
+      "schemes": [
+        {
+          "scheme_name": "HC-S",
+          "proof_header_count": 2501,
+          "proof_hash_node_count": 0,
+          "chain_proof_bytes": 410164,
+          "block_info_bytes": 0,
+          "total_proof_bytes": 410164,
+          "structure_extra_storage_bytes": 0,
+          "storage_complexity": "O(1) extra storage; O(n) proof"
+        },
+        {
+          "scheme_name": "MT-S",
+          "proof_header_count": 1,
+          "proof_hash_node_count": 13,
+          "chain_proof_bytes": 416,
+          "block_info_bytes": 164,
+          "total_proof_bytes": 580,
+          "structure_extra_storage_bytes": 320000,
+          "storage_complexity": "O(n) extra (Merkle nodes); O(log n) proof"
+        },
+        {
+          "scheme_name": "MMR-S",
+          "proof_header_count": 1,
+          "proof_hash_node_count": 13,
+          "chain_proof_bytes": 416,
+          "block_info_bytes": 164,
+          "total_proof_bytes": 580,
+          "structure_extra_storage_bytes": 320000,
+          "storage_complexity": "O(n) extra (MMR nodes); O(log n) proof; O(log n) append"
+        },
+        {
+          "scheme_name": "MMR-U",
+          "proof_header_count": 0,
+          "proof_hash_node_count": 13,
+          "chain_proof_bytes": 416,
+          "block_info_bytes": 96,
+          "total_proof_bytes": 512,
+          "structure_extra_storage_bytes": 800000,
+          "storage_complexity": "O(n) extra (MMR+Components); O(log n) proof; O(log n) append"
+        }
+      ]
+    },
+    {
+      "chain_length": 6000,
+      "schemes": [
+        {
+          "scheme_name": "HC-S",
+          "proof_header_count": 3001,
+          "proof_hash_node_count": 0,
+          "chain_proof_bytes": 492164,
+          "block_info_bytes": 0,
+          "total_proof_bytes": 492164,
+          "structure_extra_storage_bytes": 0,
+          "storage_complexity": "O(1) extra storage; O(n) proof"
+        },
+        {
+          "scheme_name": "MT-S",
+          "proof_header_count": 1,
+          "proof_hash_node_count": 13,
+          "chain_proof_bytes": 416,
+          "block_info_bytes": 164,
+          "total_proof_bytes": 580,
+          "structure_extra_storage_bytes": 384000,
+          "storage_complexity": "O(n) extra (Merkle nodes); O(log n) proof"
+        },
+        {
+          "scheme_name": "MMR-S",
+          "proof_header_count": 1,
+          "proof_hash_node_count": 13,
+          "chain_proof_bytes": 416,
+          "block_info_bytes": 164,
+          "total_proof_bytes": 580,
+          "structure_extra_storage_bytes": 384000,
+          "storage_complexity": "O(n) extra (MMR nodes); O(log n) proof; O(log n) append"
+        },
+        {
+          "scheme_name": "MMR-U",
+          "proof_header_count": 0,
+          "proof_hash_node_count": 13,
+          "chain_proof_bytes": 416,
+          "block_info_bytes": 96,
+          "total_proof_bytes": 512,
+          "structure_extra_storage_bytes": 960000,
+          "storage_complexity": "O(n) extra (MMR+Components); O(log n) proof; O(log n) append"
+        }
+      ]
+    },
+    {
+      "chain_length": 7000,
+      "schemes": [
+        {
+          "scheme_name": "HC-S",
+          "proof_header_count": 3501,
+          "proof_hash_node_count": 0,
+          "chain_proof_bytes": 574164,
+          "block_info_bytes": 0,
+          "total_proof_bytes": 574164,
+          "structure_extra_storage_bytes": 0,
+          "storage_complexity": "O(1) extra storage; O(n) proof"
+        },
+        {
+          "scheme_name": "MT-S",
+          "proof_header_count": 1,
+          "proof_hash_node_count": 13,
+          "chain_proof_bytes": 416,
+          "block_info_bytes": 164,
+          "total_proof_bytes": 580,
+          "structure_extra_storage_bytes": 448000,
+          "storage_complexity": "O(n) extra (Merkle nodes); O(log n) proof"
+        },
+        {
+          "scheme_name": "MMR-S",
+          "proof_header_count": 1,
+          "proof_hash_node_count": 13,
+          "chain_proof_bytes": 416,
+          "block_info_bytes": 164,
+          "total_proof_bytes": 580,
+          "structure_extra_storage_bytes": 448000,
+          "storage_complexity": "O(n) extra (MMR nodes); O(log n) proof; O(log n) append"
+        },
+        {
+          "scheme_name": "MMR-U",
+          "proof_header_count": 0,
+          "proof_hash_node_count": 13,
+          "chain_proof_bytes": 416,
+          "block_info_bytes": 96,
+          "total_proof_bytes": 512,
+          "structure_extra_storage_bytes": 1120000,
+          "storage_complexity": "O(n) extra (MMR+Components); O(log n) proof; O(log n) append"
+        }
+      ]
+    },
+    {
+      "chain_length": 8000,
+      "schemes": [
+        {
+          "scheme_name": "HC-S",
+          "proof_header_count": 4001,
+          "proof_hash_node_count": 0,
+          "chain_proof_bytes": 656164,
+          "block_info_bytes": 0,
+          "total_proof_bytes": 656164,
+          "structure_extra_storage_bytes": 0,
+          "storage_complexity": "O(1) extra storage; O(n) proof"
+        },
+        {
+          "scheme_name": "MT-S",
+          "proof_header_count": 1,
+          "proof_hash_node_count": 13,
+          "chain_proof_bytes": 416,
+          "block_info_bytes": 164,
+          "total_proof_bytes": 580,
+          "structure_extra_storage_bytes": 512000,
+          "storage_complexity": "O(n) extra (Merkle nodes); O(log n) proof"
+        },
+        {
+          "scheme_name": "MMR-S",
+          "proof_header_count": 1,
+          "proof_hash_node_count": 13,
+          "chain_proof_bytes": 416,
+          "block_info_bytes": 164,
+          "total_proof_bytes": 580,
+          "structure_extra_storage_bytes": 512000,
+          "storage_complexity": "O(n) extra (MMR nodes); O(log n) proof; O(log n) append"
+        },
+        {
+          "scheme_name": "MMR-U",
+          "proof_header_count": 0,
+          "proof_hash_node_count": 13,
+          "chain_proof_bytes": 416,
+          "block_info_bytes": 96,
+          "total_proof_bytes": 512,
+          "structure_extra_storage_bytes": 1280000,
+          "storage_complexity": "O(n) extra (MMR+Components); O(log n) proof; O(log n) append"
+        }
+      ]
+    },
+    {
+      "chain_length": 9000,
+      "schemes": [
+        {
+          "scheme_name": "HC-S",
+          "proof_header_count": 4501,
+          "proof_hash_node_count": 0,
+          "chain_proof_bytes": 738164,
+          "block_info_bytes": 0,
+          "total_proof_bytes": 738164,
+          "structure_extra_storage_bytes": 0,
+          "storage_complexity": "O(1) extra storage; O(n) proof"
+        },
+        {
+          "scheme_name": "MT-S",
+          "proof_header_count": 1,
+          "proof_hash_node_count": 14,
+          "chain_proof_bytes": 448,
+          "block_info_bytes": 164,
+          "total_proof_bytes": 612,
+          "structure_extra_storage_bytes": 576000,
+          "storage_complexity": "O(n) extra (Merkle nodes); O(log n) proof"
+        },
+        {
+          "scheme_name": "MMR-S",
+          "proof_header_count": 1,
+          "proof_hash_node_count": 14,
+          "chain_proof_bytes": 448,
+          "block_info_bytes": 164,
+          "total_proof_bytes": 612,
+          "structure_extra_storage_bytes": 576000,
+          "storage_complexity": "O(n) extra (MMR nodes); O(log n) proof; O(log n) append"
+        },
+        {
+          "scheme_name": "MMR-U",
+          "proof_header_count": 0,
+          "proof_hash_node_count": 14,
+          "chain_proof_bytes": 448,
+          "block_info_bytes": 96,
+          "total_proof_bytes": 544,
+          "structure_extra_storage_bytes": 1440000,
+          "storage_complexity": "O(n) extra (MMR+Components); O(log n) proof; O(log n) append"
+        }
+      ]
+    },
+    {
+      "chain_length": 10000,
+      "schemes": [
+        {
+          "scheme_name": "HC-S",
+          "proof_header_count": 5001,
+          "proof_hash_node_count": 0,
+          "chain_proof_bytes": 820164,
+          "block_info_bytes": 0,
+          "total_proof_bytes": 820164,
+          "structure_extra_storage_bytes": 0,
+          "storage_complexity": "O(1) extra storage; O(n) proof"
+        },
+        {
+          "scheme_name": "MT-S",
+          "proof_header_count": 1,
+          "proof_hash_node_count": 14,
+          "chain_proof_bytes": 448,
+          "block_info_bytes": 164,
+          "total_proof_bytes": 612,
+          "structure_extra_storage_bytes": 640000,
+          "storage_complexity": "O(n) extra (Merkle nodes); O(log n) proof"
+        },
+        {
+          "scheme_name": "MMR-S",
+          "proof_header_count": 1,
+          "proof_hash_node_count": 14,
+          "chain_proof_bytes": 448,
+          "block_info_bytes": 164,
+          "total_proof_bytes": 612,
+          "structure_extra_storage_bytes": 640000,
+          "storage_complexity": "O(n) extra (MMR nodes); O(log n) proof; O(log n) append"
+        },
+        {
+          "scheme_name": "MMR-U",
+          "proof_header_count": 0,
+          "proof_hash_node_count": 14,
+          "chain_proof_bytes": 448,
+          "block_info_bytes": 96,
+          "total_proof_bytes": 544,
+          "structure_extra_storage_bytes": 1600000,
+          "storage_complexity": "O(n) extra (MMR+Components); O(log n) proof; O(log n) append"
+        }
+      ]
+    },
+    {
+      "chain_length": 12000,
+      "schemes": [
+        {
+          "scheme_name": "HC-S",
+          "proof_header_count": 6001,
+          "proof_hash_node_count": 0,
+          "chain_proof_bytes": 984164,
+          "block_info_bytes": 0,
+          "total_proof_bytes": 984164,
+          "structure_extra_storage_bytes": 0,
+          "storage_complexity": "O(1) extra storage; O(n) proof"
+        },
+        {
+          "scheme_name": "MT-S",
+          "proof_header_count": 1,
+          "proof_hash_node_count": 14,
+          "chain_proof_bytes": 448,
+          "block_info_bytes": 164,
+          "total_proof_bytes": 612,
+          "structure_extra_storage_bytes": 768000,
+          "storage_complexity": "O(n) extra (Merkle nodes); O(log n) proof"
+        },
+        {
+          "scheme_name": "MMR-S",
+          "proof_header_count": 1,
+          "proof_hash_node_count": 14,
+          "chain_proof_bytes": 448,
+          "block_info_bytes": 164,
+          "total_proof_bytes": 612,
+          "structure_extra_storage_bytes": 768000,
+          "storage_complexity": "O(n) extra (MMR nodes); O(log n) proof; O(log n) append"
+        },
+        {
+          "scheme_name": "MMR-U",
+          "proof_header_count": 0,
+          "proof_hash_node_count": 14,
+          "chain_proof_bytes": 448,
+          "block_info_bytes": 96,
+          "total_proof_bytes": 544,
+          "structure_extra_storage_bytes": 1920000,
+          "storage_complexity": "O(n) extra (MMR+Components); O(log n) proof; O(log n) append"
+        }
+      ]
+    },
+    {
+      "chain_length": 14000,
+      "schemes": [
+        {
+          "scheme_name": "HC-S",
+          "proof_header_count": 7001,
+          "proof_hash_node_count": 0,
+          "chain_proof_bytes": 1148164,
+          "block_info_bytes": 0,
+          "total_proof_bytes": 1148164,
+          "structure_extra_storage_bytes": 0,
+          "storage_complexity": "O(1) extra storage; O(n) proof"
+        },
+        {
+          "scheme_name": "MT-S",
+          "proof_header_count": 1,
+          "proof_hash_node_count": 14,
+          "chain_proof_bytes": 448,
+          "block_info_bytes": 164,
+          "total_proof_bytes": 612,
+          "structure_extra_storage_bytes": 896000,
+          "storage_complexity": "O(n) extra (Merkle nodes); O(log n) proof"
+        },
+        {
+          "scheme_name": "MMR-S",
+          "proof_header_count": 1,
+          "proof_hash_node_count": 14,
+          "chain_proof_bytes": 448,
+          "block_info_bytes": 164,
+          "total_proof_bytes": 612,
+          "structure_extra_storage_bytes": 896000,
+          "storage_complexity": "O(n) extra (MMR nodes); O(log n) proof; O(log n) append"
+        },
+        {
+          "scheme_name": "MMR-U",
+          "proof_header_count": 0,
+          "proof_hash_node_count": 14,
+          "chain_proof_bytes": 448,
+          "block_info_bytes": 96,
+          "total_proof_bytes": 544,
+          "structure_extra_storage_bytes": 2240000,
+          "storage_complexity": "O(n) extra (MMR+Components); O(log n) proof; O(log n) append"
+        }
+      ]
+    },
+    {
+      "chain_length": 16000,
+      "schemes": [
+        {
+          "scheme_name": "HC-S",
+          "proof_header_count": 8001,
+          "proof_hash_node_count": 0,
+          "chain_proof_bytes": 1312164,
+          "block_info_bytes": 0,
+          "total_proof_bytes": 1312164,
+          "structure_extra_storage_bytes": 0,
+          "storage_complexity": "O(1) extra storage; O(n) proof"
+        },
+        {
+          "scheme_name": "MT-S",
+          "proof_header_count": 1,
+          "proof_hash_node_count": 14,
+          "chain_proof_bytes": 448,
+          "block_info_bytes": 164,
+          "total_proof_bytes": 612,
+          "structure_extra_storage_bytes": 1024000,
+          "storage_complexity": "O(n) extra (Merkle nodes); O(log n) proof"
+        },
+        {
+          "scheme_name": "MMR-S",
+          "proof_header_count": 1,
+          "proof_hash_node_count": 14,
+          "chain_proof_bytes": 448,
+          "block_info_bytes": 164,
+          "total_proof_bytes": 612,
+          "structure_extra_storage_bytes": 1024000,
+          "storage_complexity": "O(n) extra (MMR nodes); O(log n) proof; O(log n) append"
+        },
+        {
+          "scheme_name": "MMR-U",
+          "proof_header_count": 0,
+          "proof_hash_node_count": 14,
+          "chain_proof_bytes": 448,
+          "block_info_bytes": 96,
+          "total_proof_bytes": 544,
+          "structure_extra_storage_bytes": 2560000,
+          "storage_complexity": "O(n) extra (MMR+Components); O(log n) proof; O(log n) append"
+        }
+      ]
+    },
+    {
+      "chain_length": 18000,
+      "schemes": [
+        {
+          "scheme_name": "HC-S",
+          "proof_header_count": 9001,
+          "proof_hash_node_count": 0,
+          "chain_proof_bytes": 1476164,
+          "block_info_bytes": 0,
+          "total_proof_bytes": 1476164,
+          "structure_extra_storage_bytes": 0,
+          "storage_complexity": "O(1) extra storage; O(n) proof"
+        },
+        {
+          "scheme_name": "MT-S",
+          "proof_header_count": 1,
+          "proof_hash_node_count": 15,
+          "chain_proof_bytes": 480,
+          "block_info_bytes": 164,
+          "total_proof_bytes": 644,
+          "structure_extra_storage_bytes": 1152000,
+          "storage_complexity": "O(n) extra (Merkle nodes); O(log n) proof"
+        },
+        {
+          "scheme_name": "MMR-S",
+          "proof_header_count": 1,
+          "proof_hash_node_count": 15,
+          "chain_proof_bytes": 480,
+          "block_info_bytes": 164,
+          "total_proof_bytes": 644,
+          "structure_extra_storage_bytes": 1152000,
+          "storage_complexity": "O(n) extra (MMR nodes); O(log n) proof; O(log n) append"
+        },
+        {
+          "scheme_name": "MMR-U",
+          "proof_header_count": 0,
+          "proof_hash_node_count": 15,
+          "chain_proof_bytes": 480,
+          "block_info_bytes": 96,
+          "total_proof_bytes": 576,
+          "structure_extra_storage_bytes": 2880000,
+          "storage_complexity": "O(n) extra (MMR+Components); O(log n) proof; O(log n) append"
+        }
+      ]
+    },
+    {
+      "chain_length": 20000,
+      "schemes": [
+        {
+          "scheme_name": "HC-S",
+          "proof_header_count": 10001,
+          "proof_hash_node_count": 0,
+          "chain_proof_bytes": 1640164,
+          "block_info_bytes": 0,
+          "total_proof_bytes": 1640164,
+          "structure_extra_storage_bytes": 0,
+          "storage_complexity": "O(1) extra storage; O(n) proof"
+        },
+        {
+          "scheme_name": "MT-S",
+          "proof_header_count": 1,
+          "proof_hash_node_count": 15,
+          "chain_proof_bytes": 480,
+          "block_info_bytes": 164,
+          "total_proof_bytes": 644,
+          "structure_extra_storage_bytes": 1280000,
+          "storage_complexity": "O(n) extra (Merkle nodes); O(log n) proof"
+        },
+        {
+          "scheme_name": "MMR-S",
+          "proof_header_count": 1,
+          "proof_hash_node_count": 15,
+          "chain_proof_bytes": 480,
+          "block_info_bytes": 164,
+          "total_proof_bytes": 644,
+          "structure_extra_storage_bytes": 1280000,
+          "storage_complexity": "O(n) extra (MMR nodes); O(log n) proof; O(log n) append"
+        },
+        {
+          "scheme_name": "MMR-U",
+          "proof_header_count": 0,
+          "proof_hash_node_count": 15,
+          "chain_proof_bytes": 480,
+          "block_info_bytes": 96,
+          "total_proof_bytes": 576,
+          "structure_extra_storage_bytes": 3200000,
+          "storage_complexity": "O(n) extra (MMR+Components); O(log n) proof; O(log n) append"
+        }
+      ]
+    }
+  ],
+  "summary": {
+    "block_verify_by_query_type": [
+      [
+        "SingleKeyword",
+        2361839.84375
+      ],
+      [
+        "BooleanOR",
+        4582124.2875
+      ],
+      [
+        "BooleanAND",
+        2666615.59375
+      ],
+      [
+        "BooleanNOT",
+        938074.06875
+      ],
+      [
+        "NestedBoolean",
+        1989994.3750000002
+      ],
+      [
+        "RangeOnly",
+        345742.58125
+      ]
+    ],
+    "avg_block_verify_us": 2147398.4583333335,
+    "chain_verify_at_20000": [
+      [
+        "HC-S",
+        15001.5
+      ],
+      [
+        "MT-S",
+        13.50375
+      ],
+      [
+        "MMR-S",
+        15.555079670329672
+      ],
+      [
+        "MMR-U",
+        14.935579670329671
+      ]
+    ],
+    "total_verify_at_20000": [
+      [
+        "HC-S",
+        2162399.9583333335
+      ],
+      [
+        "MT-S",
+        2147411.9620833336
+      ],
+      [
+        "MMR-S",
+        2147414.0134130036
+      ],
+      [
+        "MMR-U",
+        2147413.3939130036
+      ]
+    ],
+    "speedup_at_20000": [
+      [
+        "HC-S",
+        1.0
+      ],
+      [
+        "MT-S",
+        1.013682446272651
+      ],
+      [
+        "MMR-S",
+        1.0136805217705496
+      ],
+      [
+        "MMR-U",
+        1.013681102967167
+      ]
+    ],
+    "structure_storage_at_20000": [
+      [
+        "HC-S",
+        0
+      ],
+      [
+        "MT-S",
+        1280000
+      ],
+      [
+        "MMR-S",
+        1280000
+      ],
+      [
+        "MMR-U",
+        3200000
+      ]
+    ],
+    "mmr_u_vs_mt_s_time_change_percent": 10.60320037270885,
+    "mmr_u_vs_mmr_s_time_change_percent": -3.9826218388431487,
+    "total_query_types": 6,
+    "total_chain_length_points": 23
+  }
 }

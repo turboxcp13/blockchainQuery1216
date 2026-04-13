@@ -1,0 +1,68 @@
+[
+    {
+        "start_blk": 1,
+        "end_blk": 5000,
+        "range": [[21000, 500000]],
+        "keyword_exp": {
+            "input": "'0x174bfa6600bf90c885c7c01c7031389ed1461ab9'"
+        }
+    },
+    {
+        "start_blk": 1,
+        "end_blk": 5000,
+        "range": [[50000, 2000000]],
+        "keyword_exp": {
+            "or": [
+                { "input": "'0x174bfa6600bf90c885c7c01c7031389ed1461ab9'" },
+                { "input": "'0x87c9ea70f72ad55a12bc6155a30e047cf2acd798'" }
+            ]
+        }
+    },
+    {
+        "start_blk": 1,
+        "end_blk": 20000,
+        "range": [[21000, 8000000]],
+        "keyword_exp": {
+            "and": [
+                { "input": "'0x174bfa6600bf90c885c7c01c7031389ed1461ab9'" },
+                { "input": "'0x52bc44d5378309ee2abf1539bf71de1b7d7be3b5'" }
+            ]
+        }
+    },
+    {
+        "start_blk": 1,
+        "end_blk": 1000,
+        "range": [[200000, 1000000]],
+        "keyword_exp": {
+            "not": {
+                "input": "'0x174bfa6600bf90c885c7c01c7031389ed1461ab9'"
+            }
+        }
+    },
+    {
+        "start_blk": 1,
+        "end_blk": 5000,
+        "range": [[21000, 5000000]],
+        "keyword_exp": {
+            "and": [
+                {
+                    "or": [
+                        {
+                            "input": "'0x174bfa6600bf90c885c7c01c7031389ed1461ab9'"
+                        },
+                        {
+                            "input": "'0x06012c8cf97bead5deae237070f9587f8e7a266d'"
+                        }
+                    ]
+                },
+                { "input": "'0x52bc44d5378309ee2abf1539bf71de1b7d7be3b5'" }
+            ]
+        }
+    },
+    {
+        "start_blk": 1,
+        "end_blk": 10000,
+        "range": [[21000, 4000000]],
+        "keyword_exp": null
+    }
+]
