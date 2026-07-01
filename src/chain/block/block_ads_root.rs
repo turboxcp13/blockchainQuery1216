@@ -13,6 +13,11 @@ use serde::{Deserialize, Serialize};
 ///
 /// 明确定义承诺的各个组件，提供结构化的展开验证接口。
 /// 后续如需添加新的索引类型或新的累加器摘要，只需扩展此结构即可。
+///
+/// **方案 X 扩展（向后兼容）**：新增 `bloom_root_hash` 字段用于承诺
+/// 块级自适应 Bloom 过滤器。为保持与 Paper A 实验路径的兼容性，
+/// `compute_root` 在 `bloom_root_hash == Digest::zero()` 时跳过该字段，
+/// 退化为原始 t=3 哈希；非零时按 t=4 哈希。
 #[derive(Debug, Clone, Eq, PartialEq, Default, Serialize, Deserialize)]
 pub struct BlockADSComponents {
     /// 对象 ID 集合的哈希承诺
@@ -26,10 +31,18 @@ pub struct BlockADSComponents {
     /// BlockMultiADS 的哈希（包含各时间窗口的 B+树根和 Trie 根）
     /// 用于范围查询和关键词查询的验证
     pub multi_ads_hash: Digest,
+
+    /// 【方案 X】块级自适应 Bloom 过滤器的根哈希
+    /// 用于加速否定查询的可验证 O(1) 证明
+    /// 为零时表示未启用 Bloom 承诺（Paper A 兼容路径）
+    pub bloom_root_hash: Digest,
 }
 
 impl BlockADSComponents {
-    /// 创建新的 BlockADSComponents
+    /// 创建新的 BlockADSComponents（Paper A 路径，不含 Bloom 承诺）
+    ///
+    /// `bloom_root_hash` 默认为 `Digest::zero()`，`compute_root` 会自动跳过该字段，
+    /// 保持与 Paper A 论文中描述的 t=3 哈希一致。
     pub fn new(
         id_set_root_hash: Digest,
         id_tree_root_hash: Digest,
@@ -39,18 +52,48 @@ impl BlockADSComponents {
             id_set_root_hash,
             id_tree_root_hash,
             multi_ads_hash,
+            bloom_root_hash: Digest::zero(),
+        }
+    }
+
+    /// 【方案 X】创建带 Bloom 承诺的 BlockADSComponents
+    ///
+    /// 当 `bloom_root_hash` 非零时，`compute_root` 会把该字段计入哈希，
+    /// 形成 t=4 的承诺结构。Bloom 加速否定查询的方案 X 走此路径。
+    pub fn new_with_bloom(
+        id_set_root_hash: Digest,
+        id_tree_root_hash: Digest,
+        multi_ads_hash: Digest,
+        bloom_root_hash: Digest,
+    ) -> Self {
+        Self {
+            id_set_root_hash,
+            id_tree_root_hash,
+            multi_ads_hash,
+            bloom_root_hash,
         }
     }
 
     /// 计算组件的统一承诺根
     ///
     /// 使用 Blake2b 哈希函数，按确定顺序拼接各组件进行承诺：
-    /// root = Blake2b(id_set_root_hash || id_tree_root_hash || multi_ads_hash)
+    ///
+    /// - 当 `bloom_root_hash` 为零（Paper A 路径）：
+    ///   `root = Blake2b(id_set || id_tree || multi_ads)`
+    /// - 当 `bloom_root_hash` 非零（方案 X 路径）：
+    ///   `root = Blake2b(id_set || id_tree || multi_ads || bloom_root)`
+    ///
+    /// 这一条件性设计确保 Paper A 已发表实验的承诺哈希值不受影响，
+    /// 同时为方案 X 提供干净的扩展点。
     pub fn compute_root(&self) -> Digest {
         let mut state = blake2().to_state();
         state.update(self.id_set_root_hash.as_bytes());
         state.update(self.id_tree_root_hash.as_bytes());
         state.update(self.multi_ads_hash.as_bytes());
+        // 方案 X 扩展：仅在 Bloom 承诺非零时纳入哈希
+        if !self.bloom_root_hash.is_zero() {
+            state.update(self.bloom_root_hash.as_bytes());
+        }
         Digest::from(state.finalize())
     }
 }
@@ -354,5 +397,105 @@ mod tests {
         // components 是默认值，所以 verify_self 应该失败
         // （除非 some_digest 恰好等于默认 components 的哈希，概率极低）
         assert!(!root.verify_self());
+    }
+
+    // ========================================================================
+    // 方案 X (Bloom 集成) 测试
+    // ========================================================================
+
+    /// 关键测试：Paper A 路径的哈希值在 Step 2 引入 bloom_root_hash 字段后
+    /// 必须保持不变。这是向后兼容性的硬约束。
+    #[test]
+    fn test_paper_a_path_hash_unchanged() {
+        // 使用三参数 new()（Paper A 路径），bloom_root_hash 默认为 zero
+        let components = BlockADSComponents::new(
+            Digest::default(),
+            Digest::default(),
+            Digest::default(),
+        );
+
+        // 复现 Paper A 原始 t=3 哈希（直接 blake2 三字段串联）
+        let mut state = blake2().to_state();
+        state.update(Digest::default().as_bytes());
+        state.update(Digest::default().as_bytes());
+        state.update(Digest::default().as_bytes());
+        let expected = Digest::from(state.finalize());
+
+        // compute_root() 必须产生与原始 t=3 完全一致的哈希
+        assert_eq!(components.compute_root(), expected,
+            "Step 2 broke Paper A backward compatibility: hash differs!");
+    }
+
+    /// 方案 X 路径：bloom_root_hash 非零时，哈希必须计入该字段
+    #[test]
+    fn test_scheme_x_path_includes_bloom() {
+        let mut bloom_bytes = [0u8; 32];
+        bloom_bytes[0] = 7;
+        bloom_bytes[31] = 99;
+        let bloom_digest = Digest::from(bloom_bytes);
+
+        let components_paper_a = BlockADSComponents::new(
+            Digest::default(),
+            Digest::default(),
+            Digest::default(),
+        );
+        let components_scheme_x = BlockADSComponents::new_with_bloom(
+            Digest::default(),
+            Digest::default(),
+            Digest::default(),
+            bloom_digest,
+        );
+
+        // Paper A 路径与方案 X 路径必须产生不同的哈希
+        assert_ne!(
+            components_paper_a.compute_root(),
+            components_scheme_x.compute_root(),
+            "scheme X must produce a distinct commitment when bloom_root_hash is set"
+        );
+    }
+
+    /// new_with_bloom 接受零 bloom_root_hash 时应退化为 Paper A 路径
+    /// （等同于直接调用 new）
+    #[test]
+    fn test_new_with_zero_bloom_degrades_to_paper_a() {
+        let components_a = BlockADSComponents::new(
+            Digest::default(),
+            Digest::default(),
+            Digest::default(),
+        );
+        let components_b = BlockADSComponents::new_with_bloom(
+            Digest::default(),
+            Digest::default(),
+            Digest::default(),
+            Digest::zero(),
+        );
+
+        assert_eq!(components_a.compute_root(), components_b.compute_root());
+    }
+
+    /// 方案 X 路径下，bloom_root_hash 不同的两个组件必须产生不同的根
+    /// （否则 Bloom 承诺无效，可被攻击者替换）
+    #[test]
+    fn test_bloom_field_affects_root() {
+        let mut bloom_v1_bytes = [0u8; 32];
+        bloom_v1_bytes[0] = 1;
+        let mut bloom_v2_bytes = [0u8; 32];
+        bloom_v2_bytes[0] = 2;
+
+        let components_v1 = BlockADSComponents::new_with_bloom(
+            Digest::default(),
+            Digest::default(),
+            Digest::default(),
+            Digest::from(bloom_v1_bytes),
+        );
+        let components_v2 = BlockADSComponents::new_with_bloom(
+            Digest::default(),
+            Digest::default(),
+            Digest::default(),
+            Digest::from(bloom_v2_bytes),
+        );
+
+        assert_ne!(components_v1.compute_root(), components_v2.compute_root(),
+            "different bloom_root_hash must produce different commitments");
     }
 }

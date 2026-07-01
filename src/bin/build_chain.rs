@@ -43,6 +43,12 @@ struct Opt {
     #[structopt(short, long)]
     dim: u8,
 
+    /// 【方案 X】启用块级自适应 Bloom 过滤器（默认关闭，保持 Paper A 兼容）
+    ///
+    /// 跑方案 X 实验时加上 `--enable-bloom`；跑 Paper A 对照实验时省略。
+    #[structopt(long)]
+    enable_bloom: bool,
+
     /// key path
     #[structopt(short, long, parse(from_os_str))]
     key_path: PathBuf,
@@ -153,6 +159,7 @@ fn main() -> Result<()> {
         max_id_num: opts.max_id,
         bplus_tree_fanout: opts.bplus_fanout,
         num_dim: opts.dim,
+        enable_bloom: opts.enable_bloom,
     };
     build_chain(
         &opts.input,

@@ -471,6 +471,7 @@ fn test_fake_chain_write() {
         max_id_num: 16,
         bplus_tree_fanout: 3,
         num_dim: 1,
+        enable_bloom: false,
     };
     let test_chain1 = build_chain(TEST_DATA_1, &param).unwrap();
     println!("{:#?}", test_chain1);
@@ -481,6 +482,7 @@ fn test_fake_chain_write() {
         max_id_num: 32,
         bplus_tree_fanout: 3,
         num_dim: 2,
+        enable_bloom: false,
     };
     let test_chain2 = build_chain(TEST_DATA_2, &param).unwrap();
     println!("{:#?}", test_chain2);
@@ -496,6 +498,7 @@ fn test_fake_chain_read_basic() -> Result<()> {
         max_id_num: 32,
         bplus_tree_fanout: 4,
         num_dim: 2,
+        enable_bloom: false,
     };
     let test_chain = build_chain(TEST_DATA_3, &param).unwrap();
     let query1_param_data = json!({

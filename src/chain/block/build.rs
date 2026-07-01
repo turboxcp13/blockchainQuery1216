@@ -7,6 +7,7 @@ use crate::{
             hash::{obj_id_nums_hash, obj_root_hash},
             BlockContent, BlockHead, Height,
         },
+        bloom_filter::{AdaptiveBloomFilter, DEFAULT_BLOOM_TARGET_FPR},
         bplus_tree::{self, BPlusTreeNode, BPlusTreeNodeId, BPlusTreeRoot},
         id_tree::{self, ObjId},
         object::Object,
@@ -19,7 +20,7 @@ use crate::{
 use anyhow::{bail, Context, Result};
 use howlong::ProcessDuration;
 use smol_str::SmolStr;
-use std::{collections::HashMap, num::NonZeroU16};
+use std::{collections::{HashMap, HashSet}, num::NonZeroU16};
 
 pub fn build_block<K: Num, T: ReadInterface<K = K> + WriteInterface<K = K>>(
     blk_height: Height,
@@ -191,14 +192,49 @@ pub fn build_block<K: Num, T: ReadInterface<K = K> + WriteInterface<K = K>>(
     let multi_ads_hash = blk_multi_ads.to_digest();
     let id_tree_root_hash = id_tree_changes.root.to_digest();
 
-    // 【创新点1】构建一体化的 BlockADSRoot
-    // 先构建组件
-    let ads_components = BlockADSComponents::new(
-        id_set_root_hash,
-        id_tree_root_hash,
-        multi_ads_hash,
-    );
-    
+    // 【方案 X】块级自适应 Bloom 过滤器
+    //
+    // 当 enable_bloom = true 时：
+    //   1. 收集本块所有对象的关键词集合（去重）
+    //   2. 构建一个 (m, k) 自适应于该块关键词数的 Bloom
+    //   3. 取 Bloom 的 root 哈希参与 BlockADSComponents 的 t=4 聚合承诺
+    //
+    // 当 enable_bloom = false 时：
+    //   1. Bloom 保持默认（空）状态
+    //   2. bloom_root_hash 为 Digest::zero()
+    //   3. BlockADSComponents 走 Paper A 路径（t=3 哈希，向后兼容）
+    let (bloom_filter, bloom_root_hash) = if param.enable_bloom {
+        let mut keyword_set: HashSet<Vec<u8>> = HashSet::new();
+        for obj in &raw_objs {
+            for kw in &obj.keyword_data {
+                keyword_set.insert(kw.as_bytes().to_vec());
+            }
+        }
+        let keywords: Vec<Vec<u8>> = keyword_set.into_iter().collect();
+        let bf = AdaptiveBloomFilter::new_for_keywords(&keywords, DEFAULT_BLOOM_TARGET_FPR);
+        let root = bf.to_digest();
+        (bf, root)
+    } else {
+        (AdaptiveBloomFilter::default(), Digest::zero())
+    };
+
+    // 【创新点1 + 方案 X】构建一体化的 BlockADSRoot
+    // 根据 enable_bloom 选择对应的构造路径，避免破坏 Paper A 哈希
+    let ads_components = if param.enable_bloom {
+        BlockADSComponents::new_with_bloom(
+            id_set_root_hash,
+            id_tree_root_hash,
+            multi_ads_hash,
+            bloom_root_hash,
+        )
+    } else {
+        BlockADSComponents::new(
+            id_set_root_hash,
+            id_tree_root_hash,
+            multi_ads_hash,
+        )
+    };
+
     // 从组件构建完整的 BlockADSRoot（体现一体化承诺的设计理念）
     let block_ads_root = BlockADSRoot::from_components(ads_components);
     
@@ -223,6 +259,8 @@ pub fn build_block<K: Num, T: ReadInterface<K = K> + WriteInterface<K = K>>(
     block_content.set_obj_id_nums(obj_id_nums);
     block_content.set_id_tree_root(id_tree_changes.root);
     block_content.set_ads_components(block_ads_root.components().clone());
+    // 【方案 X】存储块级 Bloom（enable_bloom=false 时为空 BF）
+    block_content.set_bloom_filter(bloom_filter);
 
     chain.write_block_content(blk_height, &block_content)?;
     chain.write_block_head(blk_height, &block_head)?;

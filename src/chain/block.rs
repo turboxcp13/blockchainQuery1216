@@ -9,6 +9,7 @@ use crate::{
 };
 use block_ads::BlockMultiADS;
 use block_ads_root::BlockADSComponents;
+use crate::chain::bloom_filter::AdaptiveBloomFilter;
 use hash::block_head_hash;
 use serde::{Deserialize, Serialize};
 use std::num::NonZeroU16;
@@ -51,6 +52,13 @@ pub struct BlockContent {
     pub obj_id_nums: Vec<NonZeroU16>,
     /// 【创新点1】BlockADSRoot 的组件，用于验证时展开
     pub ads_components: BlockADSComponents,
+    /// 【方案 X】块级自适应 Bloom 过滤器
+    ///
+    /// 仅当构建时 `Parameter::enable_bloom = true` 才被实际填充；
+    /// 否则保持 `AdaptiveBloomFilter::default()`（空过滤器，digest 为零）。
+    /// 序列化时若旧 block_content 无此字段，默认为空，保证向后兼容。
+    #[serde(default)]
+    pub bloom_filter: AdaptiveBloomFilter,
 }
 
 impl BlockContent {
@@ -63,6 +71,7 @@ impl BlockContent {
             obj_hashes: Vec::<Digest>::new(),
             obj_id_nums: Vec::<NonZeroU16>::new(),
             ads_components: BlockADSComponents::default(),
+            bloom_filter: AdaptiveBloomFilter::default(),
         }
     }
 
@@ -94,6 +103,26 @@ impl BlockContent {
     /// 【创新点1】获取 BlockADSComponents
     pub fn get_ads_components(&self) -> &BlockADSComponents {
         &self.ads_components
+    }
+
+    /// 【方案 X】设置块级 Bloom 过滤器
+    pub fn set_bloom_filter(&mut self, bf: AdaptiveBloomFilter) {
+        self.bloom_filter = bf;
+    }
+
+    /// 【方案 X】获取块级 Bloom 过滤器
+    pub fn get_bloom_filter(&self) -> &AdaptiveBloomFilter {
+        &self.bloom_filter
+    }
+
+    /// 【方案 X】查询块内是否可能含某关键词
+    ///
+    /// 返回 `false` 表示该关键词一定不在本块（用于查询路径的 Bloom-skip）；
+    /// 返回 `true` 表示可能在本块（需要进入 Trie 路径完整验证）。
+    ///
+    /// 此方法在 Step 4 (查询路径集成) 中会被调用。
+    pub fn bloom_may_contain(&self, keyword: &str) -> bool {
+        self.bloom_filter.may_contain(keyword.as_bytes())
     }
 }
 
