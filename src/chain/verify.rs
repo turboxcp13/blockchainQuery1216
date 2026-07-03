@@ -122,6 +122,65 @@ fn inner_verify<K: Num, T: ReadInterface<K = K>>(
                                 .context("Inside dag: cannot find trie proof in VO")?;
                             proof.verify_acc(k_n.acc, &n.keyword, pk)?;
                         }
+                        // 【方案 X】Bloom-skip 短路证明验证
+                        //
+                        // 关键不变式（若任一不满足则拒绝证明）：
+                        //   1. keyword 字段与 DAG 节点声明的 keyword 完全一致（防替换攻击）
+                        //   2. bloom_data 恰好含 win_size 个块（防截断攻击）
+                        //   3. bloom_data 中 Height 从 start 到 end 严格递增连续（防跳跃攻击）
+                        //   4. 每个 BF 都 says "keyword 一定不在"（这是 Bloom-skip 的语义前提）
+                        //   5. acc 是空集累加器（结果集为空的必要条件）
+                        //   6. 每个 BF 的 to_digest() 匹配对应块的 bloom_root_hash
+                        //      （由后续 merkle_proofs 验证完成，见 verify.rs:BlockADSComponents 处）
+                        vo::VONode::KeywordBloomNeg(bn) => {
+                            // 不变式 1: keyword 一致
+                            ensure!(
+                                bn.keyword.as_str() == n.keyword.as_str(),
+                                "BloomNeg: keyword mismatch: proof says {:?}, DAG says {:?}",
+                                bn.keyword.as_str(),
+                                n.keyword.as_str()
+                            );
+                            // 不变式 2: bloom_data 数量 == win_size
+                            ensure!(
+                                bn.bloom_data.len() == bn.win_size as usize,
+                                "BloomNeg: bloom_data length {} != win_size {}",
+                                bn.bloom_data.len(),
+                                bn.win_size
+                            );
+                            // 不变式 3 + 4: 连续块 + 每个 BF 都说 "不在"
+                            let end = bn.blk_height.0;
+                            let start =
+                                end.saturating_sub((bn.win_size as u32).saturating_sub(1));
+                            for (i, (bf_height, bf)) in bn.bloom_data.iter().enumerate() {
+                                let expected_h = start + i as u32;
+                                ensure!(
+                                    bf_height.0 == expected_h,
+                                    "BloomNeg: bloom_data[{}].height = {}, expected {}",
+                                    i,
+                                    bf_height.0,
+                                    expected_h
+                                );
+                                ensure!(
+                                    bf.size > 0,
+                                    "BloomNeg: empty BF at height {}",
+                                    bf_height.0
+                                );
+                                ensure!(
+                                    !bf.may_contain(n.keyword.as_bytes()),
+                                    "BloomNeg: BF at height {} says keyword {:?} MAY contain, cannot skip",
+                                    bf_height.0,
+                                    n.keyword
+                                );
+                            }
+                            // 不变式 5: acc 是空集累加器
+                            ensure!(
+                                bn.acc == empty_acc,
+                                "BloomNeg: acc is not empty accumulator"
+                            );
+                            // 主查询块进入 time_win_map（走完整承诺验证）
+                            time_win_map.insert(bn.blk_height, bn.win_size);
+                            // 不变式 6 由 merkle_proof 承诺链完成 (下方 verify_ads_root)
+                        }
                         _ => {
                             bail!("mismatched type");
                         }
@@ -429,10 +488,14 @@ fn inner_verify<K: Num, T: ReadInterface<K = K>>(
     // 验证流程：
     // 1. 计算各索引的哈希（bplus_root_hash, trie_root_hash → multi_ads_hash）
     // 2. 构建 BlockADSComponents
+    //    - Paper A 路径：new(a, b, c) → t=3 哈希（向后兼容）
+    //    - 方案 X 路径：new_with_bloom(a, b, c, d) → t=4 哈希
     // 3. 计算 compute_root() 得到统一承诺
     // 4. 与区块头中的 ads_root 比较
     let merkle_proofs = &vo_content.merkle_proofs;
-    for (height, time_win) in time_win_map {
+    for (height, time_win) in &time_win_map {
+        let height = *height;
+        let time_win = *time_win;
         if let Some((_win_size, bplus_hashes)) = bplus_roots.get_mut(&height) {
             let merkle_proof = merkle_proofs
                 .get(&height)
@@ -463,12 +526,24 @@ fn inner_verify<K: Num, T: ReadInterface<K = K>>(
                 None => id_tree_root_hash,
             };
 
-            // 【创新点1】Step 6: 使用 BlockADSComponents 进行结构化验证
-            let computed_components = BlockADSComponents::new(
-                merkle_proof.id_set_root_hash,
-                id_root_hash,
-                multi_ads_hash,
-            );
+            // 【方案 X】Step 6: 条件性构建 BlockADSComponents
+            //   - Paper A 路径 (bloom_root_hash = None): t=3 哈希
+            //   - 方案 X 路径 (bloom_root_hash = Some): t=4 哈希
+            // 这个分支保证 Paper A 的已发表实验哈希 bit-for-bit 不变
+            let computed_components = if let Some(bloom_root) = merkle_proof.bloom_root_hash {
+                BlockADSComponents::new_with_bloom(
+                    merkle_proof.id_set_root_hash,
+                    id_root_hash,
+                    multi_ads_hash,
+                    bloom_root,
+                )
+            } else {
+                BlockADSComponents::new(
+                    merkle_proof.id_set_root_hash,
+                    id_root_hash,
+                    multi_ads_hash,
+                )
+            };
             let computed_ads_root = computed_components.compute_root();
 
             // Step 7: 获取区块头中的 BlockADSRoot 并验证
@@ -476,17 +551,61 @@ fn inner_verify<K: Num, T: ReadInterface<K = K>>(
             ensure!(
                 computed_ads_root == expect_ads_root,
                 "BlockADSRoot verification failed for height {:?}!\n\
-                 Computed components: id_set={:?}, id_tree={:?}, multi_ads={:?}\n\
+                 Computed components: id_set={:?}, id_tree={:?}, multi_ads={:?}, bloom={:?}\n\
                  Computed root: {:?}\n\
                  Expected root: {:?}",
                 height,
                 merkle_proof.id_set_root_hash,
                 id_root_hash,
                 multi_ads_hash,
+                merkle_proof.bloom_root_hash,
                 computed_ads_root,
                 expect_ads_root
             );
         }
+    }
+
+    // 【方案 X】Bloom-skip 辅助块承诺验证
+    //
+    // Bloom-skip 引用的辅助块（不查 Trie/B+ 的块）也必须走 BlockADSRoot 验证链，
+    // 否则攻击者可以伪造这些块的 Bloom 承诺。这些块的特征：
+    //   - 出现在 vo_content.merkle_proofs 中
+    //   - 但不出现在 bplus_roots 中（没有 Range 查询）
+    //   - 有 bloom_root_hash（方案 X 路径必备）
+    //   - 有 id_tree_root_hash（辅助块不是终点，一定有 id_tree 承诺）
+    //
+    // 验证流程简化（不需要 bplus + trie 合成 single_ads_hash）：
+    //   直接从 merkle_proof.ads_hashes 计算 multi_ads_hash，
+    //   然后用 new_with_bloom 构造 BlockADSComponents 并验证。
+    for (height, merkle_proof) in merkle_proofs {
+        if bplus_roots.contains_key(height) {
+            continue; // 已在主循环处理
+        }
+        // 只处理带 bloom_root_hash 的辅助块；其他情况（如未被查询触及的块）跳过
+        let bloom_root = match merkle_proof.bloom_root_hash {
+            Some(d) => d,
+            None => continue,
+        };
+        let id_root_hash = merkle_proof
+            .id_tree_root_hash
+            .context("Bloom-aux block must carry id_tree_root_hash")?;
+        let multi_ads_hash = compute_multi_ads_hash(merkle_proof.ads_hashes.iter());
+        let computed_components = BlockADSComponents::new_with_bloom(
+            merkle_proof.id_set_root_hash,
+            id_root_hash,
+            multi_ads_hash,
+            bloom_root,
+        );
+        let computed_ads_root = computed_components.compute_root();
+        let expect_ads_root = chain.read_block_head(*height)?.get_ads_root();
+        ensure!(
+            computed_ads_root == expect_ads_root,
+            "Bloom-aux BlockADSRoot verification failed for height {:?}!\n\
+             Computed root: {:?}, Expected root: {:?}",
+            height,
+            computed_ads_root,
+            expect_ads_root
+        );
     }
 
     let mut vo_outputs = Set::new();

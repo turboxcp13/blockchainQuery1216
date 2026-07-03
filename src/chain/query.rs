@@ -9,10 +9,12 @@ use self::{
 };
 use crate::{
     acc::{
-        compute_set_operation_final, compute_set_operation_intermediate, ops::Op, AccPublicKey, Set,
+        compute_set_operation_final, compute_set_operation_intermediate, ops::Op, AccPublicKey,
+        AccValue, Set,
     },
     chain::{
         block::{hash::obj_id_nums_hash, Height},
+        bloom_filter::AdaptiveBloomFilter,
         bplus_tree,
         id_tree::{self, ObjId},
         object::Object,
@@ -22,7 +24,8 @@ use crate::{
         trie_tree,
         verify::vo::{
             MerkleProof, VOBlkRtNode, VOFinalDiff, VOFinalIntersec, VOFinalUnion, VOInterDiff,
-            VOInterIntersec, VOInterUnion, VOKeywordNode, VONode, VORangeNode, VoDagContent, VO,
+            VOInterIntersec, VOInterUnion, VOKeywordBloomNeg, VOKeywordNode, VONode, VORangeNode,
+            VoDagContent, VO,
         },
     },
     digest::{Digest, Digestible},
@@ -70,6 +73,58 @@ pub struct QueryResInfo<K: Num> {
     res: (HashMap<ObjId, Object<K>>, VO<K>),
 }
 
+/// 【方案 X】尝试用块级自适应 Bloom 过滤器对关键词查询做否定短路
+///
+/// # 语义
+///
+/// 检查 `[blk_height - win_size + 1, blk_height]` 这 `win_size` 个块的 per-block
+/// Bloom 过滤器。若**所有** BF 都判定 keyword "一定不在"，返回 `Some(bloom_data)`
+/// 用于构造 `VOKeywordBloomNeg`；否则返回 `None`，调用方走原 Trie 查询路径。
+///
+/// # 正确性
+///
+/// Bloom 假阴率 = 0（数学保证）：BF 返回 "不在" 时数据一定不在。
+/// Bloom 假阳率 ≤ 目标 FPR（工程保证）：BF 返回 "可能在" 时可能是假阳，
+/// 此时函数返回 `None`，回退到 Trie 查询路径，保证查询结果与 Paper A 一致。
+///
+/// # 退化条件
+///
+/// - 任一块的 BF 为空（`size == 0`）→ 说明该块构建时 `enable_bloom = false`，
+///   无 Bloom 承诺可依赖，无法 skip，返回 `None`。
+/// - 任一块的 BF 判定 "可能在" → 返回 `None`。
+///
+/// # 参数
+///
+/// - `chain`: 只读区块链接口
+/// - `blk_height`: 查询关键词节点挂载的块高度
+/// - `win_size`: 滑动窗口大小（对应查询在 Trie 上的窗口）
+/// - `keyword`: 查询的关键词
+fn try_bloom_skip<K: Num, T: ReadInterface<K = K>>(
+    chain: &T,
+    blk_height: Height,
+    win_size: u16,
+    keyword: &str,
+) -> Result<Option<Vec<(Height, AdaptiveBloomFilter)>>> {
+    let end = blk_height.0;
+    let start = end.saturating_sub((win_size as u32).saturating_sub(1));
+    let mut bloom_data: Vec<(Height, AdaptiveBloomFilter)> = Vec::with_capacity(win_size as usize);
+    let kw_bytes = keyword.as_bytes();
+    for h in start..=end {
+        let bc = chain.read_block_content(Height(h))?;
+        let bf = bc.get_bloom_filter();
+        if bf.size == 0 {
+            // 该块无 Bloom 承诺（构建时 enable_bloom=false）→ 无法 skip
+            return Ok(None);
+        }
+        if bf.may_contain(kw_bytes) {
+            // BF 说 "可能在"（假阳或真阳）→ 无法 skip
+            return Ok(None);
+        }
+        bloom_data.push((Height(h), bf.clone()));
+    }
+    Ok(Some(bloom_data))
+}
+
 #[allow(clippy::too_many_arguments)]
 #[allow(clippy::type_complexity)]
 fn query_final<K: Num, T: ReadInterface<K = K>>(
@@ -92,6 +147,13 @@ fn query_final<K: Num, T: ReadInterface<K = K>>(
     let mut obj_map = HashMap::<ObjId, Object<K>>::new();
     let mut merkle_proofs = HashMap::<Height, MerkleProof>::new();
     let mut time_win_map = HashMap::<Height, u16>::new();
+    // 【方案 X】追踪 Bloom-skip 涉及的辅助块高度
+    //
+    // 这些块本身不查 Trie（不在 time_win_map 里），但它们的 Bloom 承诺根
+    // 需要通过一个"简化 MerkleProof"验证到区块头，防止攻击者伪造 Bloom。
+    // - 主查询块（time_win_map 内）：完整 MerkleProof（ads_hashes + bplus + bloom）
+    // - 辅助块（bloom_aux_heights - time_win_map）：简化 MerkleProof（只用于验证 bloom）
+    let mut bloom_aux_heights: HashSet<Height> = HashSet::new();
 
     let mut qp_inputs = match toposort(query_dag, None) {
         Ok(v) => v,
@@ -166,33 +228,69 @@ fn query_final<K: Num, T: ReadInterface<K = K>>(
                             bail!("invalid blk height");
                         };
                         time_win_map.insert(blk_height, win_size);
-                        if let Some((s, a)) = n.set {
-                            set = s;
-                            acc = a;
-                        } else if let Some(ctx) = trie_ctxes.get_mut(&n.blk_height) {
-                            let trie_ctx = ctx;
-                            let (s, a) = trie_ctx.query(&SmolStr::from(&node.keyword), pk)?;
-                            set = s;
-                            acc = a;
+
+                        // 【方案 X】Bloom-skip 预检查
+                        //
+                        // 在读取 Trie 之前，先尝试从 [blk_height - win_size + 1, blk_height]
+                        // 这 win_size 个块的 per-block Bloom 过滤器判断关键词是否可能存在。
+                        // 若所有 w 个 BF 都判定 "keyword 一定不在"（无假阴），
+                        // 直接返回空集，跳过 O(log n × w) 的 Trie 查询工作。
+                        //
+                        // 依赖：n.set 未预先计算（若已预计算，说明上游已确定，不需要 skip）
+                        let bloom_neg = if n.set.is_none() {
+                            try_bloom_skip(chain, blk_height, win_size, &node.keyword)?
                         } else {
-                            let trie_root = chain
-                                .read_block_content(blk_height)?
-                                .ads
-                                .read_trie_root(win_size)?;
-                            let mut trie_ctx =
-                                trie_tree::read::ReadContext::new(chain, trie_root.trie_root_id);
-                            let (s, a) = trie_ctx.query(&SmolStr::from(&node.keyword), pk)?;
-                            set = s;
-                            acc = a;
-                            trie_ctxes.insert(n.blk_height, trie_ctx);
-                        }
-                        let vo_keyword_node = VOKeywordNode {
-                            blk_height: n.blk_height,
-                            win_size,
-                            acc,
+                            None
                         };
-                        vo_dag_content.insert(idx, VONode::Keyword(vo_keyword_node));
-                        set_map.insert(idx, set);
+
+                        if let Some(bloom_data) = bloom_neg {
+                            // ===== 短路路径：Bloom 说全部 w 个块都不含 keyword =====
+                            set = Set::new();
+                            acc = AccValue::from_set(&set, pk);
+                            // 记录 Bloom-skip 涉及的所有块（包括挂载块自身），
+                            // 供后续生成 MerkleProof 时验证 bloom_root_hash 承诺链
+                            for (h, _) in &bloom_data {
+                                bloom_aux_heights.insert(*h);
+                            }
+                            let vo_bloom_neg = VOKeywordBloomNeg {
+                                blk_height,
+                                win_size,
+                                keyword: SmolStr::from(&node.keyword),
+                                acc,
+                                bloom_data,
+                            };
+                            vo_dag_content.insert(idx, VONode::KeywordBloomNeg(vo_bloom_neg));
+                            set_map.insert(idx, set);
+                        } else {
+                            // ===== 原 Trie 路径（Paper A / 未启用 Bloom / Bloom 说可能在）=====
+                            if let Some((s, a)) = n.set {
+                                set = s;
+                                acc = a;
+                            } else if let Some(ctx) = trie_ctxes.get_mut(&n.blk_height) {
+                                let trie_ctx = ctx;
+                                let (s, a) = trie_ctx.query(&SmolStr::from(&node.keyword), pk)?;
+                                set = s;
+                                acc = a;
+                            } else {
+                                let trie_root = chain
+                                    .read_block_content(blk_height)?
+                                    .ads
+                                    .read_trie_root(win_size)?;
+                                let mut trie_ctx =
+                                    trie_tree::read::ReadContext::new(chain, trie_root.trie_root_id);
+                                let (s, a) = trie_ctx.query(&SmolStr::from(&node.keyword), pk)?;
+                                set = s;
+                                acc = a;
+                                trie_ctxes.insert(n.blk_height, trie_ctx);
+                            }
+                            let vo_keyword_node = VOKeywordNode {
+                                blk_height: n.blk_height,
+                                win_size,
+                                acc,
+                            };
+                            vo_dag_content.insert(idx, VONode::Keyword(vo_keyword_node));
+                            set_map.insert(idx, set);
+                        }
                     }
                 }
                 query_dag::DagNode::BlkRt(_) => {
@@ -511,7 +609,7 @@ fn query_final<K: Num, T: ReadInterface<K = K>>(
         let obj_id_nums = blk_content.read_obj_id_nums();
         let id_set_root_hash = obj_id_nums_hash(obj_id_nums.iter());
         let mut ads_hashes = BTreeMap::<u16, Digest>::new();
-        let multi_ads = blk_content.ads;
+        let multi_ads = &blk_content.ads;
         let mut extra_bplus_rt_hashes = HashMap::<u8, Digest>::new();
         for (t_w, ads) in multi_ads.read_adses() {
             if *t_w != time_win {
@@ -534,11 +632,54 @@ fn query_final<K: Num, T: ReadInterface<K = K>>(
         } else {
             Some(chain.read_block_content(height)?.id_tree_root.to_digest())
         };
+        // 【方案 X】主查询块：若块含 Bloom（enable_bloom 构建），
+        // 从 block_content 读取 bloom_root_hash 供验证时构造 t=4 哈希。
+        // 空 BF（size=0）表示未启用 Bloom → None → 走 t=3 兼容路径。
+        let bloom_root_hash = {
+            let bf = blk_content.get_bloom_filter();
+            if bf.size == 0 {
+                None
+            } else {
+                Some(bf.to_digest())
+            }
+        };
         let merkle_proof = MerkleProof {
             id_tree_root_hash,
             id_set_root_hash,
             ads_hashes,
             extra_bplus_rt_hashes,
+            bloom_root_hash,
+        };
+        merkle_proofs.insert(height, merkle_proof);
+        // 主查询块已处理，从辅助集合移除避免重复
+        bloom_aux_heights.remove(&height);
+    }
+
+    // 【方案 X】处理 Bloom-skip 辅助块：只出现在 Bloom-skip 上下文中的块
+    //
+    // 这些块不查 Trie/B+，所以不需要 extra_bplus_rt_hashes；
+    // 但它们的 bloom_root_hash 必须能追溯到 block_head.ads_root。
+    // 生成简化 MerkleProof：
+    //   - ads_hashes: 直接读所有 windows 的 ads.to_digest()（不做 bplus/trie 组合）
+    //   - extra_bplus_rt_hashes: 空
+    //   - id_tree_root_hash: 从 blk_content 读
+    //   - bloom_root_hash: Some（既然进了辅助集合，必然有 Bloom）
+    for height in bloom_aux_heights {
+        let blk_content = chain.read_block_content(height)?;
+        let obj_id_nums = blk_content.read_obj_id_nums();
+        let id_set_root_hash = obj_id_nums_hash(obj_id_nums.iter());
+        let mut ads_hashes = BTreeMap::<u16, Digest>::new();
+        for (t_w, ads) in blk_content.ads.read_adses() {
+            ads_hashes.insert(*t_w, ads.to_digest());
+        }
+        let id_tree_root_hash = Some(blk_content.id_tree_root.to_digest());
+        let bloom_root_hash = Some(blk_content.get_bloom_filter().to_digest());
+        let merkle_proof = MerkleProof {
+            id_tree_root_hash,
+            id_set_root_hash,
+            ads_hashes,
+            extra_bplus_rt_hashes: HashMap::new(),
+            bloom_root_hash,
         };
         merkle_proofs.insert(height, merkle_proof);
     }

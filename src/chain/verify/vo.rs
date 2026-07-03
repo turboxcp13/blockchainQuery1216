@@ -2,6 +2,7 @@ use crate::{
     acc::{AccValue, FinalProof, IntermediateProof, Set},
     chain::{
         block::{block_ads_root::BlockADSComponents, Height},
+        bloom_filter::AdaptiveBloomFilter,
         bplus_tree,
         id_tree::{self, ObjId},
         traits::Num,
@@ -13,12 +14,19 @@ use crate::{
 use anyhow::{bail, Result};
 use petgraph::graph::NodeIndex;
 use serde::{Deserialize, Serialize};
+use smol_str::SmolStr;
 use std::collections::{BTreeMap, HashMap};
 
 #[derive(Debug, Serialize, Deserialize)]
 pub enum VONode<K: Num> {
     Range(VORangeNode<K>),
     Keyword(VOKeywordNode),
+    /// 【方案 X】Bloom-skip 短路证明节点
+    ///
+    /// 当 Bloom 过滤器判定关键词一定不在窗口内 w 个块的任何一个中时，
+    /// 用此节点代替原来的 Keyword(VOKeywordNode)。验证时不再需要 Trie proof，
+    /// 只需验证 w 个 BF 的完整性与 BF 说的"不在"。
+    KeywordBloomNeg(VOKeywordBloomNeg),
     BlkRt(VOBlkRtNode),
     InterUnion(VOInterUnion),
     FinalUnion(VOFinalUnion),
@@ -33,6 +41,8 @@ impl<K: Num> VONode<K> {
         match self {
             VONode::Range(n) => Ok(&n.acc),
             VONode::Keyword(n) => Ok(&n.acc),
+            // 【方案 X】Bloom-skip 节点：结果集为空，acc 为空集累加器
+            VONode::KeywordBloomNeg(n) => Ok(&n.acc),
             VONode::BlkRt(n) => Ok(&n.acc),
             VONode::InterUnion(n) => Ok(&n.acc),
             VONode::FinalUnion(_) => bail!("This is a final union operation"),
@@ -57,6 +67,34 @@ pub struct VOKeywordNode {
     pub(crate) blk_height: Height,
     pub(crate) win_size: u16,
     pub(crate) acc: AccValue,
+}
+
+/// 【方案 X】Bloom-skip 证明节点
+///
+/// 当查询关键词在滑动窗口 [blk_height - win_size + 1, blk_height] 内所有 w 个块的
+/// per-block Bloom 过滤器中都被判为 "一定不在"，可跳过 Trie 全路径，直接返回空集。
+///
+/// # 验证不变式
+///
+/// - `bloom_data.len() == win_size`
+/// - `bloom_data[i].0` (Height) 是从 start 到 blk_height 的连续块高度
+/// - 对每个 `bloom_data[i].1` (BF), `bf.may_contain(keyword) == false`
+/// - 每个 BF 的 `to_digest()` 必须匹配对应块的 `BlockADSComponents.bloom_root_hash`
+///   （由 `merkle_proofs` 验证链完成）
+#[derive(Debug, Serialize, Deserialize)]
+pub struct VOKeywordBloomNeg {
+    /// 挂载块高度（与查询 DAG 中 Keyword 节点的 blk_height 一致）
+    pub(crate) blk_height: Height,
+    /// 滑动窗口大小
+    pub(crate) win_size: u16,
+    /// 查询的关键词（供验证时 replay may_contain 判断）
+    pub(crate) keyword: SmolStr,
+    /// 空集累加器（结果集为空时的 acc value）
+    pub(crate) acc: AccValue,
+    /// 涉及的 w 个块的 (Height, Bloom filter) 数据
+    /// - 顺序：从 start = blk_height - win_size + 1 到 blk_height（升序）
+    /// - 每个 BF 都必须 says "keyword 不在"
+    pub(crate) bloom_data: Vec<(Height, AdaptiveBloomFilter)>,
 }
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -105,6 +143,14 @@ pub struct MerkleProof {
     pub(crate) id_set_root_hash: Digest,
     pub(crate) ads_hashes: BTreeMap<u16, Digest>,
     pub(crate) extra_bplus_rt_hashes: HashMap<u8, Digest>,
+    /// 【方案 X】块级 Bloom 承诺根哈希
+    ///
+    /// - `None`：Paper A 路径（构建时 `enable_bloom = false`），验证走 t=3 哈希
+    /// - `Some(digest)`：方案 X 路径（构建时 `enable_bloom = true`），验证走 t=4 哈希
+    ///
+    /// 通过 `#[serde(default)]` 保证旧的 VO 反序列化时该字段为 `None`，向后兼容。
+    #[serde(default)]
+    pub(crate) bloom_root_hash: Option<Digest>,
 }
 
 impl MerkleProof {
