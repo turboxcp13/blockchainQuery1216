@@ -1,0 +1,24 @@
+[
+    {
+        "start_blk": 1,
+        "end_blk": 4998,
+        "range": [[21000, 8000000]],
+        "keyword_exp": {
+            "and": [
+                { "input": "'0x174bfa6600bf90c885c7c01c7031389ed1461ab9'" },
+                { "input": "'0xdeadbeef00000000000000000000000000000001'" }
+            ]
+        }
+    },
+    {
+        "start_blk": 1,
+        "end_blk": 4998,
+        "range": [[21000, 8000000]],
+        "keyword_exp": {
+            "and": [
+                { "input": "'0x87c9ea70f72ad55a12bc6155a30e047cf2acd798'" },
+                { "input": "'0xdeadbeef00000000000000000000000000000002'" }
+            ]
+        }
+    }
+]

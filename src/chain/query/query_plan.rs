@@ -1,6 +1,6 @@
 use crate::{
     acc::{AccValue, Set},
-    chain::{block::Height, bplus_tree, traits::Num, trie_tree},
+    chain::{block::Height, bloom_filter::AdaptiveBloomFilter, bplus_tree, traits::Num, trie_tree},
 };
 use anyhow::{Context, Result};
 use petgraph::graph::NodeIndex;
@@ -40,6 +40,15 @@ pub struct QPRangeNode<K: Num> {
 pub struct QPKeywordNode {
     pub(crate) blk_height: Height,
     pub(crate) set: Option<(Set, AccValue)>,
+    /// 【方案 X】Bloom-skip 数据
+    ///
+    /// - `None`：走原 Trie 查询路径（Paper A 或 Bloom 说"可能在"）
+    /// - `Some(bloom_data)`：Bloom-skip 命中，`set` 是空集，
+    ///   `bloom_data` 是 win_size 个块的 (Height, BF) 证据
+    ///
+    /// 通过 `#[serde(default)]` 保证从旧的序列化格式反序列化时该字段为 `None`。
+    #[serde(default, skip)]
+    pub(crate) bloom_data: Option<Vec<(Height, AdaptiveBloomFilter)>>,
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize)]

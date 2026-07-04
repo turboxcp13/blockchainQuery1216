@@ -99,6 +99,15 @@ pub struct QueryResInfo<K: Num> {
 /// - `blk_height`: 查询关键词节点挂载的块高度
 /// - `win_size`: 滑动窗口大小（对应查询在 Trie 上的窗口）
 /// - `keyword`: 查询的关键词
+/// 【方案 X】旧的 Bloom-skip 辅助函数（已废弃）
+///
+/// 此函数在 Step 4 的初始设计中位于 query.rs，试图在 `query_final` 里做
+/// Bloom-skip 判定。但实际发现 QP 构建阶段（`param_to_qp`）会**总是**
+/// 预填 `QPKeywordNode.set = Some(trie_result)`，导致此函数永远不会被调用。
+///
+/// **修复**：Bloom-skip 逻辑已迁移到 `query_param.rs::try_bloom_skip_qp`，
+/// 在 QP 构建时介入。此函数保留仅供参考。
+#[allow(dead_code)]
 fn try_bloom_skip<K: Num, T: ReadInterface<K = K>>(
     chain: &T,
     blk_height: Height,
@@ -229,26 +238,17 @@ fn query_final<K: Num, T: ReadInterface<K = K>>(
                         };
                         time_win_map.insert(blk_height, win_size);
 
-                        // 【方案 X】Bloom-skip 预检查
+                        // 【方案 X】读 QPKeywordNode.bloom_data 决定路径
                         //
-                        // 在读取 Trie 之前，先尝试从 [blk_height - win_size + 1, blk_height]
-                        // 这 win_size 个块的 per-block Bloom 过滤器判断关键词是否可能存在。
-                        // 若所有 w 个 BF 都判定 "keyword 一定不在"（无假阴），
-                        // 直接返回空集，跳过 O(log n × w) 的 Trie 查询工作。
-                        //
-                        // 依赖：n.set 未预先计算（若已预计算，说明上游已确定，不需要 skip）
-                        let bloom_neg = if n.set.is_none() {
-                            try_bloom_skip(chain, blk_height, win_size, &node.keyword)?
-                        } else {
-                            None
-                        };
-
-                        if let Some(bloom_data) = bloom_neg {
-                            // ===== 短路路径：Bloom 说全部 w 个块都不含 keyword =====
-                            set = Set::new();
-                            acc = AccValue::from_set(&set, pk);
-                            // 记录 Bloom-skip 涉及的所有块（包括挂载块自身），
-                            // 供后续生成 MerkleProof 时验证 bloom_root_hash 承诺链
+                        // Bloom-skip 判定已在 QP 构建阶段（param_to_qp）完成，
+                        // 这里只需读取结果：
+                        //   - bloom_data.is_some() → Bloom 说全不在 → VOKeywordBloomNeg
+                        //   - bloom_data.is_none() → 走原 Trie / 已预计算 → VOKeywordNode
+                        if let Some(bloom_data) = n.bloom_data {
+                            // ===== Bloom-skip 短路路径 =====
+                            let (s, a) = n.set.context("bloom-skip 分支 set 应为空集 Some")?;
+                            set = s;
+                            acc = a;
                             for (h, _) in &bloom_data {
                                 bloom_aux_heights.insert(*h);
                             }
@@ -262,7 +262,7 @@ fn query_final<K: Num, T: ReadInterface<K = K>>(
                             vo_dag_content.insert(idx, VONode::KeywordBloomNeg(vo_bloom_neg));
                             set_map.insert(idx, set);
                         } else {
-                            // ===== 原 Trie 路径（Paper A / 未启用 Bloom / Bloom 说可能在）=====
+                            // ===== 原 Trie 路径（Paper A 或 Bloom 说"可能在"）=====
                             if let Some((s, a)) = n.set {
                                 set = s;
                                 acc = a;

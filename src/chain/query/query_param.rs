@@ -3,6 +3,7 @@ use crate::{
     acc::AccPublicKey,
     chain::{
         block::Height,
+        bloom_filter::AdaptiveBloomFilter,
         bplus_tree,
         query::query_plan::{
             QPBlkRtNode, QPDiff, QPIntersec, QPKeywordNode, QPNode, QPRangeNode, QPUnion,
@@ -142,6 +143,43 @@ impl<K: Num> QueryParam<K> {
     }
 }
 
+/// 【方案 X】QP 构建阶段的 Bloom-skip 预检查
+///
+/// 语义与 query.rs 里的 `try_bloom_skip` 完全相同，但**位置更早**——
+/// 在 QP 构建阶段介入。若不在这里做，`param_to_qp` 会直接查 Trie 并把
+/// 结果塞进 `QPKeywordNode.set`，导致后续 query.rs 中的 Bloom-skip 分支
+/// 无法触发。
+///
+/// # 返回值
+///
+/// - `Some(bloom_data)`：全部 win_size 个块的 BF 都判定 "keyword 一定不在"，
+///   可以走 Bloom-skip 短路
+/// - `None`：任一 BF 为空（`size==0`，说明未启用 Bloom）或说 "可能在"，
+///   必须走原 Trie 查询路径
+fn try_bloom_skip_qp<K: Num, T: ReadInterface<K = K>>(
+    chain: &T,
+    blk_height: Height,
+    win_size: u16,
+    keyword: &str,
+) -> Result<Option<Vec<(Height, AdaptiveBloomFilter)>>> {
+    let end = blk_height.0;
+    let start = end.saturating_sub((win_size as u32).saturating_sub(1));
+    let mut bloom_data: Vec<(Height, AdaptiveBloomFilter)> = Vec::with_capacity(win_size as usize);
+    let kw_bytes = keyword.as_bytes();
+    for h in start..=end {
+        let bc = chain.read_block_content(Height(h))?;
+        let bf = bc.get_bloom_filter();
+        if bf.size == 0 {
+            return Ok(None);
+        }
+        if bf.may_contain(kw_bytes) {
+            return Ok(None);
+        }
+        bloom_data.push((Height(h), bf.clone()));
+    }
+    Ok(Some(bloom_data))
+}
+
 pub fn param_to_qp<K: Num, T: ReadInterface<K = K>>(
     time_win: &TimeWin,
     e_win_size: u16,
@@ -181,29 +219,55 @@ pub fn param_to_qp<K: Num, T: ReadInterface<K = K>>(
                     dag_content.insert(*idx, QPNode::Range(Box::new(qp_range_node)));
                 }
                 DagNode::Keyword(n) => {
-                    let set;
-                    let acc;
-                    if let Some(ctx) = trie_ctxes.get_mut(&end_blk_height) {
-                        let (s, a) = ctx.query(&SmolStr::from(&n.keyword), pk)?;
-                        set = s;
-                        acc = a;
+                    // 【方案 X】Bloom-skip 预检查（关键：在 Trie 查询之前！）
+                    //
+                    // 这里是 QP 构建的关键路径——如果不在这里做 Bloom-skip，
+                    // 走到 query.rs 时 set 已经被 Some(trie_result) 预填，
+                    // Bloom-skip 分支无法触发。
+                    let bloom_neg = try_bloom_skip_qp(
+                        chain,
+                        end_blk_height,
+                        e_win_size,
+                        &n.keyword,
+                    )?;
+
+                    if let Some(bloom_data) = bloom_neg {
+                        // ===== Bloom-skip 生效：跳过 Trie，构造空集 QPKeywordNode =====
+                        let empty_set = crate::acc::Set::new();
+                        let empty_acc = crate::acc::AccValue::from_set(&empty_set, pk);
+                        let qp_keyword_node = QPKeywordNode {
+                            blk_height: end_blk_height,
+                            set: Some((empty_set, empty_acc)),
+                            bloom_data: Some(bloom_data),
+                        };
+                        dag_content.insert(*idx, QPNode::Keyword(Box::new(qp_keyword_node)));
                     } else {
-                        let trie_root = chain
-                            .read_block_content(end_blk_height)?
-                            .ads
-                            .read_trie_root(e_win_size)?;
-                        let mut trie_ctx =
-                            trie_tree::read::ReadContext::new(chain, trie_root.trie_root_id);
-                        let (s, a) = trie_ctx.query(&SmolStr::from(&n.keyword), pk)?;
-                        set = s;
-                        acc = a;
-                        trie_ctxes.insert(end_blk_height, trie_ctx);
+                        // ===== 原 Trie 查询路径（不变）=====
+                        let set;
+                        let acc;
+                        if let Some(ctx) = trie_ctxes.get_mut(&end_blk_height) {
+                            let (s, a) = ctx.query(&SmolStr::from(&n.keyword), pk)?;
+                            set = s;
+                            acc = a;
+                        } else {
+                            let trie_root = chain
+                                .read_block_content(end_blk_height)?
+                                .ads
+                                .read_trie_root(e_win_size)?;
+                            let mut trie_ctx =
+                                trie_tree::read::ReadContext::new(chain, trie_root.trie_root_id);
+                            let (s, a) = trie_ctx.query(&SmolStr::from(&n.keyword), pk)?;
+                            set = s;
+                            acc = a;
+                            trie_ctxes.insert(end_blk_height, trie_ctx);
+                        }
+                        let qp_keyword_node = QPKeywordNode {
+                            blk_height: end_blk_height,
+                            set: Some((set, acc)),
+                            bloom_data: None,
+                        };
+                        dag_content.insert(*idx, QPNode::Keyword(Box::new(qp_keyword_node)));
                     }
-                    let qp_keyword_node = QPKeywordNode {
-                        blk_height: end_blk_height,
-                        set: Some((set, acc)),
-                    };
-                    dag_content.insert(*idx, QPNode::Keyword(Box::new(qp_keyword_node)));
                 }
                 DagNode::BlkRt(_) => {
                     let blk_content = chain.read_block_content(end_blk_height)?;

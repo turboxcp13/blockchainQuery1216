@@ -445,6 +445,7 @@ pub fn gen_last_query_dag_with_cont_basic<K: Num, T: ReadInterface<K = K>>(
                     let qp_keyword_node = QPKeywordNode {
                         blk_height: end_blk_height,
                         set: Some((set, acc)),
+                        bloom_data: None,
                     };
                     dag_content.insert(*idx, QPNode::Keyword(Box::new(qp_keyword_node)));
                 }

@@ -572,7 +572,12 @@ fn inner_verify<K: Num, T: ReadInterface<K = K>>(
     //   - 出现在 vo_content.merkle_proofs 中
     //   - 但不出现在 bplus_roots 中（没有 Range 查询）
     //   - 有 bloom_root_hash（方案 X 路径必备）
-    //   - 有 id_tree_root_hash（辅助块不是终点，一定有 id_tree 承诺）
+    //
+    // 关于 id_tree_root_hash：
+    //   - 查询区间的**末块** (qp_end_blk_height) 的 merkle_proof.id_tree_root_hash
+    //     故意设为 None，验证时用**全局** `id_tree_root_hash`（从 vo.id_tree_proof
+    //     算得）作为回退。这跟主查询块循环的处理逻辑一致。
+    //   - 其他辅助块的 merkle_proof.id_tree_root_hash 是 Some(...)，直接用。
     //
     // 验证流程简化（不需要 bplus + trie 合成 single_ads_hash）：
     //   直接从 merkle_proof.ads_hashes 计算 multi_ads_hash，
@@ -586,9 +591,12 @@ fn inner_verify<K: Num, T: ReadInterface<K = K>>(
             Some(d) => d,
             None => continue,
         };
-        let id_root_hash = merkle_proof
-            .id_tree_root_hash
-            .context("Bloom-aux block must carry id_tree_root_hash")?;
+        // 与主查询块循环 (line ~487) 一致：优先用 merkle_proof 里的，
+        // None 时回退到全局 id_tree_root_hash（末块场景）
+        let id_root_hash = match merkle_proof.id_tree_root_hash {
+            Some(d) => d,
+            None => id_tree_root_hash,
+        };
         let multi_ads_hash = compute_multi_ads_hash(merkle_proof.ads_hashes.iter());
         let computed_components = BlockADSComponents::new_with_bloom(
             merkle_proof.id_set_root_hash,
