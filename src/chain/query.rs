@@ -604,6 +604,20 @@ fn query_final<K: Num, T: ReadInterface<K = K>>(
     }
 
     let id_tree_proof = id_tree_ctx.into_proof();
+
+    // 【方案 X】判断哪些主查询块走了 Range 路径
+    //
+    // 如果 Bloom-skip 生效使 Keyword 结果为空集，process_empty_sets 里的
+    // Intersec 空集短路会把 AND 里的 Range 分支剪枝（query.rs::process_empty_sets
+    // line 868-877），Range 节点不会被处理，bplus_roots 里不会有该 height。
+    //
+    // verify.rs 主循环入口 `bplus_roots.get_mut(&height)` 不成立 → 该 height
+    // 走辅助块循环。辅助块循环直接用 merkle_proof.ads_hashes 计算 multi_ads_hash，
+    // **不会**用 bplus + trie 合成 single_ads_hash 补齐 time_win 项。
+    //
+    // 所以：如果块没走 Range，ads_hashes 必须包含 time_win 那一项。
+    let range_heights: HashSet<Height> = height_dims.iter().map(|(h, _)| *h).collect();
+
     for (height, time_win) in time_win_map {
         let blk_content = chain.read_block_content(height)?;
         let obj_id_nums = blk_content.read_obj_id_nums();
@@ -611,10 +625,16 @@ fn query_final<K: Num, T: ReadInterface<K = K>>(
         let mut ads_hashes = BTreeMap::<u16, Digest>::new();
         let multi_ads = &blk_content.ads;
         let mut extra_bplus_rt_hashes = HashMap::<u8, Digest>::new();
+        // 关键判断：该主查询块有 Range 查询走了原路径吗？
+        // - 有 → verify 时用 bplus + trie 合成 single_ads_hash 补齐（跳过 time_win 项）
+        // - 无 → 该块走辅助块循环，必须 include time_win 项
+        let block_has_range = range_heights.contains(&height);
         for (t_w, ads) in multi_ads.read_adses() {
-            if *t_w != time_win {
+            if *t_w != time_win || !block_has_range {
+                // 全量 include（非 time_win 项本来就 include；没走 Range 时 time_win 项也 include）
                 ads_hashes.insert(*t_w, ads.to_digest());
             } else {
+                // 走 Range 路径 + 当前 time_win：只放 bplus，verify 补齐
                 let bplus_tree_roots = &ads.bplus_tree_roots;
                 for (i, rt) in bplus_tree_roots.iter().enumerate() {
                     extra_bplus_rt_hashes.insert(i as u8, rt.to_digest());

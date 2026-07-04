@@ -1,0 +1,46 @@
+[
+  {
+    "query_info": {
+      "stage1": {
+        "real": 70239709,
+        "sys": 79718750,
+        "user": 52531250
+      },
+      "stage2": {
+        "real": 1633,
+        "sys": 0,
+        "user": 0
+      },
+      "stage3": {
+        "real": 5613,
+        "sys": 0,
+        "user": 0
+      },
+      "stage4": {
+        "real": 691631,
+        "sys": 1593750,
+        "user": 718750
+      },
+      "total": {
+        "real": 2989680,
+        "sys": 3390625,
+        "user": 2218750
+      }
+    },
+    "verify_info": {
+      "verify_time": {
+        "real": 649738,
+        "sys": 187500,
+        "user": 62500
+      },
+      "vo_size": {
+        "cur_id_s": 2500,
+        "id_proof_s": 47500,
+        "merkle_s": 162500,
+        "total_s": 3297647,
+        "trie_proof_s": 1966397,
+        "vo_dag_s": 1118750
+      }
+    }
+  }
+]
