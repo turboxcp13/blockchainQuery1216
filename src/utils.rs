@@ -318,18 +318,22 @@ mod tests {
         let k1 = QPKeywordNode {
             blk_height: Height(0),
             set: None,
+            bloom_data: None,
         };
         let k2 = QPKeywordNode {
             blk_height: Height(0),
             set: None,
+            bloom_data: None,
         };
         let k3 = QPKeywordNode {
             blk_height: Height(0),
             set: None,
+            bloom_data: None,
         };
         let k4 = QPKeywordNode {
             blk_height: Height(0),
             set: None,
+            bloom_data: None,
         };
         let union = QPUnion { set: None };
 

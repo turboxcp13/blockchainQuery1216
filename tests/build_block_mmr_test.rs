@@ -29,6 +29,7 @@ use vchain_plus::SimChain;
 // === 辅助函数 ===
 
 /// 创建测试用参数
+/// 创建测试用参数
 fn make_test_param() -> Parameter {
     Parameter {
         id_tree_fanout: 4,
@@ -36,6 +37,7 @@ fn make_test_param() -> Parameter {
         num_dim: 2,
         max_id_num: NonZeroU16::new(1000).unwrap().get(),
         time_win_sizes: vec![10],
+        enable_bloom: false,
     }
 }
 

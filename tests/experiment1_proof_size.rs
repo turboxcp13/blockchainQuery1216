@@ -274,6 +274,7 @@ fn make_test_param() -> Parameter {
         num_dim: 1,
         max_id_num: 4095,
         time_win_sizes: vec![2, 4, 8, 16, 32, 64],
+        enable_bloom: false,
     }
 }
 

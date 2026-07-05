@@ -2,35 +2,35 @@
   {
     "query_info": {
       "stage1": {
-        "real": 7112770,
-        "sys": 8328125,
-        "user": 12859375
+        "real": 7425881,
+        "sys": 16625000,
+        "user": 5109375
       },
       "stage2": {
-        "real": 3120,
+        "real": 6789,
         "sys": 0,
         "user": 0
       },
       "stage3": {
-        "real": 331,
+        "real": 398,
         "sys": 0,
         "user": 0
       },
       "stage4": {
-        "real": 56584,
-        "sys": 0,
-        "user": 46875
+        "real": 64349,
+        "sys": 62500,
+        "user": 15625
       },
       "total": {
-        "real": 435034,
-        "sys": 437500,
-        "user": 593750
+        "real": 534400,
+        "sys": 812500,
+        "user": 234375
       }
     },
     "verify_info": {
       "verify_time": {
-        "real": 39089,
-        "sys": 15625,
+        "real": 71736,
+        "sys": 46875,
         "user": 15625
       },
       "vo_size": {
@@ -46,35 +46,35 @@
   {
     "query_info": {
       "stage1": {
-        "real": 3419911,
-        "sys": 6750000,
-        "user": 5250000
+        "real": 2763368,
+        "sys": 7593750,
+        "user": 4312500
       },
       "stage2": {
-        "real": 231,
+        "real": 209,
         "sys": 0,
         "user": 0
       },
       "stage3": {
-        "real": 354,
+        "real": 317,
         "sys": 0,
         "user": 0
       },
       "stage4": {
-        "real": 4884,
+        "real": 4588,
         "sys": 0,
         "user": 0
       },
       "total": {
-        "real": 166798,
-        "sys": 296875,
-        "user": 218750
+        "real": 137815,
+        "sys": 328125,
+        "user": 203125
       }
     },
     "verify_info": {
       "verify_time": {
-        "real": 34934,
-        "sys": 0,
+        "real": 61012,
+        "sys": 15625,
         "user": 31250
       },
       "vo_size": {
